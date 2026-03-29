@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+:root {
+  --color-thunder-yellow: #FFD700;
+  --color-thunder-blue: #0047AB;
+}
