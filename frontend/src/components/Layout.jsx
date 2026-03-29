@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
-  const { role, isCoach, logout } = useAuth();
+  const { role, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
