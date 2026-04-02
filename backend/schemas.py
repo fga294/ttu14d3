@@ -99,6 +99,12 @@ class FitnessCreate(BaseModel):
     notes: str | None = None
 
 
+class FitnessUpdate(BaseModel):
+    date: date | None = None
+    rating: float | None = Field(default=None, ge=1, le=10)
+    notes: str | None = None
+
+
 class FitnessOut(BaseModel):
     id: int
     player_id: int
