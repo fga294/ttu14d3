@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -9,6 +10,44 @@ export default function PlayerDetail() {
   const { id } = useParams();
   const [player, setPlayer] = useState(null);
   const [fitness, setFitness] = useState(null);
+  const { isCoach } = useAuth();
+  const [editRow, setEditRow] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [newEntry, setNewEntry] = useState({ date: "", rating: "", notes: "" });
+
+  const refreshFitness = () => api.get(`/fitness?player_id=${id}`).then(setFitness);
+
+  const handleAdd = async () => {
+    if (!newEntry.date || !newEntry.rating) return;
+    await api.post("/fitness", {
+      player_id: Number(id),
+      date: newEntry.date,
+      rating: Number(newEntry.rating),
+      notes: newEntry.notes || null,
+    });
+    setNewEntry({ date: "", rating: "", notes: "" });
+    refreshFitness();
+  };
+
+  const handleEditStart = (f) => {
+    setEditRow(f.id);
+    setEditForm({ date: f.date, rating: f.rating, notes: f.notes ?? "" });
+  };
+
+  const handleEditSave = async (fid) => {
+    await api.put(`/fitness/${fid}`, {
+      date: editForm.date,
+      rating: Number(editForm.rating),
+      notes: editForm.notes || null,
+    });
+    setEditRow(null);
+    refreshFitness();
+  };
+
+  const handleDelete = async (fid) => {
+    await api.del(`/fitness/${fid}`);
+    refreshFitness();
+  };
 
   useEffect(() => {
     api.get(`/players/${id}`).then(setPlayer);
@@ -82,6 +121,85 @@ export default function PlayerDetail() {
         Fitness History
       </h2>
       <FitnessChart fitness={fitness} />
+
+      {isCoach && fitness !== null && (
+        <div className="card-static p-4 mb-6">
+          <p className="text-xs font-semibold uppercase mb-3" style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}>
+            Coach — Manage Records
+          </p>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ color: "var(--text-muted)", fontSize: 11 }}>
+                <th style={{ textAlign: "left", padding: "4px 6px" }}>Date</th>
+                <th style={{ textAlign: "left", padding: "4px 6px" }}>Rating</th>
+                <th style={{ textAlign: "left", padding: "4px 6px" }}>Notes</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {[...(fitness ?? [])].sort((a, b) => new Date(b.date) - new Date(a.date)).map((f) => (
+                <tr key={f.id} style={{ borderTop: "1px solid var(--surface-600)" }}>
+                  {editRow === f.id ? (
+                    <>
+                      <td style={{ padding: "6px" }}>
+                        <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                          className="text-xs rounded px-1 py-1" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
+                      </td>
+                      <td style={{ padding: "6px" }}>
+                        <input type="number" min="1" max="10" step="0.1" value={editForm.rating} onChange={(e) => setEditForm({ ...editForm, rating: e.target.value })}
+                          className="text-xs rounded px-1 py-1 w-16" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
+                      </td>
+                      <td style={{ padding: "6px" }}>
+                        <input type="text" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                          className="text-xs rounded px-1 py-1 w-full" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
+                      </td>
+                      <td style={{ padding: "6px", whiteSpace: "nowrap" }}>
+                        <button onClick={() => handleEditSave(f.id)} className="text-xs rounded px-2 py-1 mr-1 font-semibold"
+                          style={{ background: "var(--thunder-gold)", color: "var(--surface-900)" }}>Save</button>
+                        <button onClick={() => setEditRow(null)} className="text-xs rounded px-2 py-1"
+                          style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Cancel</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td style={{ padding: "6px", color: "var(--text-secondary)" }}>{f.date}</td>
+                      <td style={{ padding: "6px", fontWeight: 700, color: "var(--thunder-gold)" }}>{f.rating}/10</td>
+                      <td style={{ padding: "6px", color: "var(--text-muted)" }}>{f.notes ?? "—"}</td>
+                      <td style={{ padding: "6px", whiteSpace: "nowrap" }}>
+                        <button onClick={() => handleEditStart(f)} className="text-xs rounded px-2 py-1 mr-1"
+                          style={{ background: "var(--accent-blue, #0047AB)", color: "#fff" }}>Edit</button>
+                        <button onClick={() => handleDelete(f.id)} className="text-xs rounded px-2 py-1"
+                          style={{ background: "rgba(200,50,50,0.7)", color: "#fff" }}>Del</button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+              {/* Add row */}
+              <tr style={{ borderTop: "1px solid var(--surface-600)" }}>
+                <td style={{ padding: "6px" }}>
+                  <input type="date" value={newEntry.date} onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
+                    className="text-xs rounded px-1 py-1" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
+                </td>
+                <td style={{ padding: "6px" }}>
+                  <input type="number" min="1" max="10" step="0.1" placeholder="1–10" value={newEntry.rating}
+                    onChange={(e) => setNewEntry({ ...newEntry, rating: e.target.value })}
+                    className="text-xs rounded px-1 py-1 w-16" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
+                </td>
+                <td style={{ padding: "6px" }}>
+                  <input type="text" placeholder="Notes (optional)" value={newEntry.notes}
+                    onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
+                    className="text-xs rounded px-1 py-1 w-full" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
+                </td>
+                <td style={{ padding: "6px" }}>
+                  <button onClick={handleAdd} className="text-xs rounded px-2 py-1 font-bold"
+                    style={{ background: "var(--thunder-gold)", color: "var(--surface-900)" }}>+ Add</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
