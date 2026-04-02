@@ -68,9 +68,16 @@ def seed():
     ]
     db.add_all(events)
 
-    # Fitness
-    for i, p in enumerate(players[:8]):
-        db.add(Fitness(player_id=p.id, date=date(2026, 3, 20), rating=round(6 + (i % 4) * 0.8, 1)))
+    # Fitness — 4 entries per player across 4 dates
+    fitness_data = [
+        (date(2026, 3, 1),  [6.2, 5.8, 7.0, 6.5, 5.5, 7.2, 6.8, 7.5, 8.0, 7.0, 6.5, 6.0, 7.3, 6.8]),
+        (date(2026, 3, 10), [6.8, 6.2, 7.4, 7.0, 6.0, 7.8, 7.2, 8.0, 8.5, 7.5, 7.0, 6.5, 7.8, 7.2]),
+        (date(2026, 3, 20), [7.2, 6.6, 7.8, 7.4, 6.4, 8.1, 7.5, 8.3, 8.8, 7.9, 7.3, 6.9, 8.1, 7.5]),
+        (date(2026, 3, 28), [7.5, 7.0, 8.1, 7.8, 6.8, 8.4, 7.9, 8.6, 9.2, 8.2, 7.7, 7.2, 8.5, 7.9]),
+    ]
+    for entry_date, ratings in fitness_data:
+        for player, rating in zip(players, ratings):
+            db.add(Fitness(player_id=player.id, date=entry_date, rating=rating))
 
     # POTM
     db.add(POTM(game_id=games[0].id, player_id=players[8].id))
