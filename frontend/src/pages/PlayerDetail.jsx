@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api/client";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 
 export default function PlayerDetail() {
   const { id } = useParams();
@@ -78,34 +81,7 @@ export default function PlayerDetail() {
       <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
         Fitness History
       </h2>
-      {fitness === null ? (
-        <div className="space-y-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="card-static p-3 flex justify-between">
-              <div className="skeleton h-4 w-24" />
-              <div className="skeleton h-4 w-12" />
-            </div>
-          ))}
-        </div>
-      ) : fitness.length === 0 ? (
-        <div className="card-static p-6 text-center">
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>No fitness records yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {fitness.map((f) => (
-            <div key={f.id} className="card-static p-3 flex justify-between items-center">
-              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{f.date}</span>
-              <div className="flex items-center gap-2">
-                <FitnessBar rating={f.rating} />
-                <span className="font-bold text-sm w-10 text-right" style={{ color: "var(--text-primary)" }}>
-                  {f.rating}/10
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <FitnessChart fitness={fitness} />
     </div>
   );
 }
@@ -121,6 +97,58 @@ function FitnessBar({ rating }) {
         className="h-full rounded-full"
         style={{ width: `${pct}%`, background: color, transition: "width 0.5s ease" }}
       />
+    </div>
+  );
+}
+
+function FitnessChart({ fitness }) {
+  if (fitness === null) {
+    return (
+      <div className="card-static p-4">
+        <div className="skeleton h-40 w-full" />
+      </div>
+    );
+  }
+  if (fitness.length === 0) {
+    return (
+      <div className="card-static p-6 text-center">
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>No fitness records yet.</p>
+      </div>
+    );
+  }
+
+  const data = [...fitness]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map((f) => ({ date: f.date, rating: f.rating }));
+
+  return (
+    <div className="card-static p-4 mb-6">
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="fitnessGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FFD700" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#FFD700" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} />
+          <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+          <Tooltip
+            contentStyle={{ background: "var(--surface-800)", border: "none", borderRadius: 8, fontSize: 12 }}
+            formatter={(value) => [`${value}/10`, "Rating"]}
+          />
+          <Area
+            type="monotone"
+            dataKey="rating"
+            stroke="#FFD700"
+            strokeWidth={2.5}
+            fill="url(#fitnessGradient)"
+            dot={{ fill: "#FFD700", r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
