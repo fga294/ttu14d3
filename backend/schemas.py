@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from datetime import date, datetime
+from typing import Optional
 from pydantic import BaseModel, Field
 from models import EventType, Role
 
@@ -100,9 +103,9 @@ class FitnessCreate(BaseModel):
 
 
 class FitnessUpdate(BaseModel):
-    date: date | None = None
-    rating: float | None = Field(default=None, ge=1, le=10)
-    notes: str | None = None
+    date: Optional[date] = None
+    rating: Optional[float] = Field(default=None, ge=1, le=10)
+    notes: Optional[str] = None
 
 
 class FitnessOut(BaseModel):
