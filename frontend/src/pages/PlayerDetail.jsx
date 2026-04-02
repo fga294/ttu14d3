@@ -204,21 +204,6 @@ export default function PlayerDetail() {
   );
 }
 
-function FitnessBar({ rating }) {
-  const pct = (rating / 10) * 100;
-  const color =
-    rating >= 7 ? "var(--success)" : rating >= 4 ? "var(--thunder-gold)" : "var(--danger)";
-
-  return (
-    <div className="w-20 h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-600)" }}>
-      <div
-        className="h-full rounded-full"
-        style={{ width: `${pct}%`, background: color, transition: "width 0.5s ease" }}
-      />
-    </div>
-  );
-}
-
 function FitnessChart({ fitness }) {
   if (fitness === null) {
     return (
