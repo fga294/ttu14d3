@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from database import get_db
-from models import Player, GameEvent, EventType, Fitness, POTM
+from models import Player, GameEvent, EventType, Fitness
 from schemas import PlayerCreate, PlayerOut, PlayerStats
 from deps import get_current_user, require_coach
 
@@ -36,16 +36,15 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
     avg_fitness = db.query(func.avg(Fitness.rating)).filter(
         Fitness.player_id == player_id
     ).scalar()
-    potm_count = db.query(func.count()).filter(
-        POTM.player_id == player_id
-    ).scalar()
 
     return PlayerStats(
         id=player.id, name=player.name, number=player.number,
-        position=player.position, date_of_birth=player.date_of_birth,
+        position=player.position,
+        secondary_position=player.secondary_position,
+        tertiary_position=player.tertiary_position,
+        date_of_birth=player.date_of_birth,
         goals=goals, assists=assists, yellow_cards=yellow_cards,
         red_cards=red_cards, avg_fitness=round(avg_fitness, 1) if avg_fitness else None,
-        potm_count=potm_count,
     )
 
 

@@ -1,6 +1,5 @@
 {
   "enabledPlugins": {
-    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
-    "everything-claude-code@everything-claude-code": true
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
   }
 }

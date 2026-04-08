@@ -8,8 +8,7 @@ import Players from "./pages/Players";
 import PlayerDetail from "./pages/PlayerDetail";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
-import Leaderboard from "./pages/Leaderboard";
-import Messages from "./pages/Messages";
+import Formations from "./pages/Formations";
 
 export default function App() {
   return (
@@ -23,8 +22,7 @@ export default function App() {
             <Route path="/players/:id" element={<PlayerDetail />} />
             <Route path="/games" element={<Games />} />
             <Route path="/games/:id" element={<GameDetail />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/messages" element={<Messages />} />
+            <Route path="/formations" element={<Formations />} />
           </Route>
         </Routes>
       </BrowserRouter>

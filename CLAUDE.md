@@ -72,6 +72,6 @@ All endpoints are under `/api/`. Frontend proxies `/api` → `http://localhost:3
 Oracle Cloud VPS: Nginx serves React static build from `/var/www/dist`, proxies `/api` to Gunicorn on port 3001.
 
 ## Key Features
-- POTM leaderboard (bar chart via Recharts)
+- Interactive formations page (football pitch with drag-and-drop player positioning)
 - Per-player stats: goals, assists, fitness rating aggregated from `game_events` and `fitness` tables
 - Message moderation: public sees only `approved=true`; coach can `PUT /api/messages/{id}/approve`
