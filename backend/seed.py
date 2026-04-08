@@ -1,7 +1,7 @@
 from datetime import date
 from passlib.context import CryptContext
 from database import SessionLocal, engine, Base
-from models import User, Player, Game, GameEvent, EventType, Fitness, POTM, Message, Role
+from models import User, Player, Game, GameEvent, EventType, Fitness, Formation, Role
 
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -68,19 +68,40 @@ def seed():
     ]
     db.add_all(events)
 
-    # Fitness
-    for i, p in enumerate(players[:8]):
-        db.add(Fitness(player_id=p.id, date=date(2026, 3, 20), rating=round(6 + (i % 4) * 0.8, 1)))
+    # Fitness — 4 entries per player across 4 dates
+    fitness_data = [
+        (date(2026, 3, 1),  [6.2, 5.8, 7.0, 6.5, 5.5, 7.2, 6.8, 7.5, 8.0, 7.0, 6.5, 6.0, 7.3, 6.8]),
+        (date(2026, 3, 10), [6.8, 6.2, 7.4, 7.0, 6.0, 7.8, 7.2, 8.0, 8.5, 7.5, 7.0, 6.5, 7.8, 7.2]),
+        (date(2026, 3, 20), [7.2, 6.6, 7.8, 7.4, 6.4, 8.1, 7.5, 8.3, 8.8, 7.9, 7.3, 6.9, 8.1, 7.5]),
+        (date(2026, 3, 28), [7.5, 7.0, 8.1, 7.8, 6.8, 8.4, 7.9, 8.6, 9.2, 8.2, 7.7, 7.2, 8.5, 7.9]),
+    ]
+    for entry_date, ratings in fitness_data:
+        for player, rating in zip(players, ratings):
+            db.add(Fitness(player_id=player.id, date=entry_date, rating=rating))
 
-    # POTM
-    db.add(POTM(game_id=games[0].id, player_id=players[8].id))
-    db.add(POTM(game_id=games[1].id, player_id=players[8].id))
-    db.add(POTM(game_id=games[2].id, player_id=players[9].id))
-
-    # Messages
-    db.add(Message(author="Coach Mike", content="Great win today! Keep up the training.", approved=True))
-    db.add(Message(author="Parent Jane", content="What time is Saturday's game?", approved=True))
-    db.add(Message(author="Player Leo", content="Can we do extra shooting practice?", approved=False))
+    # Formation (4-3-3: GK, LB, CB, CB, RB, CM, CM, CM, LW, ST, RW)
+    db.add(Formation(
+        name="Match Day",
+        formation_type="4-3-3",
+        starters=[
+            players[0].id,   # GK: Liam Walker #1
+            players[4].id,   # LB: James Lee #5
+            players[1].id,   # CB: Noah Chen #2
+            players[2].id,   # CB: Ethan Patel #3
+            players[3].id,   # RB: Oliver Smith #4
+            players[5].id,   # CM: Lucas Brown #6
+            players[6].id,   # CM: Mason Davis #7
+            players[9].id,   # CM: Henry Jones #10
+            players[10].id,  # LW: Leo Martinez #11
+            players[8].id,   # ST: Jack Taylor #9
+            players[7].id,   # RW: Aiden Wilson #8
+        ],
+        reserves=[
+            players[11].id,  # Oscar Nguyen #12
+            players[12].id,  # Charlie Kim #14
+            players[13].id,  # Archie Thomas #15
+        ],
+    ))
 
     db.commit()
     db.close()
