@@ -25,6 +25,14 @@ export default function GameDetail() {
   const [players, setPlayers] = useState([]);
   const [form, setForm] = useState({ player_id: "", event_type: "goal", minute: "" });
   const [adding, setAdding] = useState(false);
+  const [editingScore, setEditingScore] = useState(false);
+  const [scoreForm, setScoreForm] = useState({ our_score: "", their_score: "" });
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     api.get(`/games/${id}`).then(setGame);
@@ -46,6 +54,28 @@ export default function GameDetail() {
     } finally {
       setAdding(false);
     }
+  };
+
+  const handleEditScore = () => {
+    setScoreForm({
+      our_score: game.our_score ?? "",
+      their_score: game.their_score ?? "",
+    });
+    setEditingScore(true);
+  };
+
+  const handleSaveScore = async () => {
+    const updated = await api.put(`/games/${id}`, {
+      date: game.date,
+      opponent: game.opponent,
+      location: game.location,
+      home_away: game.home_away,
+      our_score: scoreForm.our_score !== "" ? parseInt(scoreForm.our_score) : null,
+      their_score: scoreForm.their_score !== "" ? parseInt(scoreForm.their_score) : null,
+    });
+    setGame(updated);
+    setEditingScore(false);
+    showToast("Score updated");
   };
 
   if (!game) return <GameDetailSkeleton />;
@@ -84,33 +114,91 @@ export default function GameDetail() {
           {game.date} · {game.location || "TBD"} · {game.home_away.toUpperCase()}
         </p>
 
-        <div className="flex items-center justify-center gap-6 mb-3">
-          <div>
-            <p className="text-sm font-medium" style={{ color: "var(--thunder-gold)" }}>Thunder</p>
-            <p className="text-4xl font-black" style={{ color: "var(--text-primary)" }}>
-              {game.our_score ?? "—"}
-            </p>
+        {editingScore ? (
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <div>
+              <p className="text-sm font-medium mb-1" style={{ color: "var(--thunder-gold)" }}>Thunder</p>
+              <input
+                type="number"
+                min="0"
+                value={scoreForm.our_score}
+                onChange={(e) => setScoreForm({ ...scoreForm, our_score: e.target.value })}
+                className="text-3xl font-black text-center rounded w-20 py-1"
+                style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "1px solid var(--surface-600)" }}
+              />
+            </div>
+            <span className="text-lg font-bold" style={{ color: "var(--text-muted)" }}>vs</span>
+            <div>
+              <p className="text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>{game.opponent}</p>
+              <input
+                type="number"
+                min="0"
+                value={scoreForm.their_score}
+                onChange={(e) => setScoreForm({ ...scoreForm, their_score: e.target.value })}
+                className="text-3xl font-black text-center rounded w-20 py-1"
+                style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "1px solid var(--surface-600)" }}
+              />
+            </div>
           </div>
-          <span className="text-lg font-bold" style={{ color: "var(--text-muted)" }}>vs</span>
-          <div>
-            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{game.opponent}</p>
-            <p className="text-4xl font-black" style={{ color: "var(--text-primary)" }}>
-              {game.their_score ?? "—"}
-            </p>
+        ) : (
+          <div className="flex items-center justify-center gap-6 mb-3">
+            <div>
+              <p className="text-sm font-medium" style={{ color: "var(--thunder-gold)" }}>Thunder</p>
+              <p className="text-4xl font-black" style={{ color: "var(--text-primary)" }}>
+                {game.our_score ?? "—"}
+              </p>
+            </div>
+            <span className="text-lg font-bold" style={{ color: "var(--text-muted)" }}>vs</span>
+            <div>
+              <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{game.opponent}</p>
+              <p className="text-4xl font-black" style={{ color: "var(--text-primary)" }}>
+                {game.their_score ?? "—"}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        {result && (
-          <span
-            className="badge text-xs"
-            style={{
-              background: `${resultColor[result]}15`,
-              color: resultColor[result],
-              border: `1px solid ${resultColor[result]}30`,
-            }}
-          >
-            {result}
-          </span>
+        {editingScore ? (
+          <div className="flex justify-center gap-2">
+            <button
+              onClick={handleSaveScore}
+              className="text-xs font-bold rounded px-4 py-1.5"
+              style={{ background: "var(--thunder-gold)", color: "var(--surface-900)" }}
+            >
+              Save Score
+            </button>
+            <button
+              onClick={() => setEditingScore(false)}
+              className="text-xs font-medium rounded px-4 py-1.5"
+              style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
+            {result && (
+              <span
+                className="badge text-xs"
+                style={{
+                  background: `${resultColor[result]}15`,
+                  color: resultColor[result],
+                  border: `1px solid ${resultColor[result]}30`,
+                }}
+              >
+                {result}
+              </span>
+            )}
+            {isCoach && (
+              <button
+                onClick={handleEditScore}
+                className="text-xs font-medium rounded px-3 py-1 ml-2"
+                style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}
+              >
+                Edit Score
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -154,6 +242,26 @@ export default function GameDetail() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            background: "var(--thunder-gold)",
+            color: "var(--surface-900)",
+            borderRadius: 8,
+            padding: "10px 18px",
+            fontWeight: 700,
+            fontSize: 14,
+            zIndex: 9999,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+          }}
+        >
+          {toast}
         </div>
       )}
 

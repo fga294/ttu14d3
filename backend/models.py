@@ -1,5 +1,5 @@
-from datetime import date, datetime
-from sqlalchemy import Boolean, Date, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from datetime import date
+from sqlalchemy import Date, Enum, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 import enum
@@ -32,10 +32,11 @@ class Player(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     number: Mapped[int] = mapped_column(Integer, nullable=False)
     position: Mapped[str] = mapped_column(String(30), nullable=False)
+    secondary_position: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    tertiary_position: Mapped[str | None] = mapped_column(String(30), nullable=True)
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     events: Mapped[list["GameEvent"]] = relationship(back_populates="player")
     fitness_records: Mapped[list["Fitness"]] = relationship(back_populates="player")
-    potm_awards: Mapped[list["POTM"]] = relationship(back_populates="player")
 
 
 class Game(Base):
@@ -48,7 +49,6 @@ class Game(Base):
     our_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     their_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     events: Mapped[list["GameEvent"]] = relationship(back_populates="game")
-    potm: Mapped["POTM | None"] = relationship(back_populates="game")
 
 
 class GameEvent(Base):
@@ -72,20 +72,11 @@ class Fitness(Base):
     player: Mapped["Player"] = relationship(back_populates="fitness_records")
 
 
-class POTM(Base):
-    __tablename__ = "potm"
+class Formation(Base):
+    __tablename__ = "formations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), nullable=False)
-    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
-    game: Mapped["Game"] = relationship(back_populates="potm")
-    player: Mapped["Player"] = relationship(back_populates="potm_awards")
-    __table_args__ = (UniqueConstraint("game_id", name="uq_potm_game"),)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    formation_type: Mapped[str] = mapped_column(String(10), nullable=False)
+    starters = mapped_column(JSON, nullable=False)
+    reserves = mapped_column(JSON, nullable=False, default=list)
 
-
-class Message(Base):
-    __tablename__ = "messages"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    author: Mapped[str] = mapped_column(String(100), nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    approved: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -14,6 +14,48 @@ export default function PlayerDetail() {
   const [editRow, setEditRow] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [newEntry, setNewEntry] = useState({ date: "", rating: "", notes: "" });
+  const [toast, setToast] = useState(null);
+  const [editingPositions, setEditingPositions] = useState(false);
+  const [posForm, setPosForm] = useState({ position: "", secondary_position: "", tertiary_position: "" });
+
+  const POSITIONS = [
+    { group: "Goalkeeper", options: ["GK"] },
+    { group: "Defenders", options: ["CB", "LB", "RB", "LWB", "RWB"] },
+    { group: "Midfielders", options: ["CDM", "CM", "CAM", "LM", "RM"] },
+    { group: "Attackers", options: ["LW", "RW", "LF", "RF", "CF", "ST"] },
+  ];
+
+  const handleEditPositions = () => {
+    setPosForm({
+      position: player.position,
+      secondary_position: player.secondary_position ?? "",
+      tertiary_position: player.tertiary_position ?? "",
+    });
+    setEditingPositions(true);
+  };
+
+  const handlePositionSave = async () => {
+    await api.put(`/players/${id}`, {
+      name: player.name,
+      number: player.number,
+      position: posForm.position,
+      secondary_position: posForm.secondary_position || null,
+      tertiary_position: posForm.tertiary_position || null,
+    });
+    setPlayer({
+      ...player,
+      position: posForm.position,
+      secondary_position: posForm.secondary_position || null,
+      tertiary_position: posForm.tertiary_position || null,
+    });
+    setEditingPositions(false);
+    showToast("Positions updated");
+  };
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const refreshFitness = () => api.get(`/fitness?player_id=${id}`).then(setFitness);
 
@@ -42,6 +84,7 @@ export default function PlayerDetail() {
     });
     setEditRow(null);
     refreshFitness();
+    showToast("Record updated");
   };
 
   const handleDelete = async (fid) => {
@@ -86,7 +129,48 @@ export default function PlayerDetail() {
           <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
             {player.name}
           </h1>
-          <span className="badge badge-blue mt-1">{player.position}</span>
+          {editingPositions ? (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <PositionSelect
+                label="Primary"
+                value={posForm.position}
+                onChange={(v) => setPosForm({ ...posForm, position: v })}
+                positions={POSITIONS}
+              />
+              <PositionSelect
+                label="Secondary"
+                value={posForm.secondary_position}
+                onChange={(v) => setPosForm({ ...posForm, secondary_position: v })}
+                positions={POSITIONS}
+                allowClear
+              />
+              <PositionSelect
+                label="Tertiary"
+                value={posForm.tertiary_position}
+                onChange={(v) => setPosForm({ ...posForm, tertiary_position: v })}
+                positions={POSITIONS}
+                allowClear
+              />
+              <button onClick={handlePositionSave} className="text-xs rounded px-2 py-1 font-semibold"
+                style={{ background: "var(--thunder-gold)", color: "var(--surface-900)" }}>Save</button>
+              <button onClick={() => setEditingPositions(false)} className="text-xs rounded px-2 py-1"
+                style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Cancel</button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1 mt-1">
+              <span className="badge badge-gold">{player.position}</span>
+              {player.secondary_position && (
+                <span className="badge badge-blue">{player.secondary_position}</span>
+              )}
+              {player.tertiary_position && (
+                <span className="badge badge-gold" style={{ opacity: 0.7 }}>{player.tertiary_position}</span>
+              )}
+              {isCoach && (
+                <button onClick={handleEditPositions} className="text-xs rounded px-2 py-1 ml-1"
+                  style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Edit</button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -101,17 +185,11 @@ export default function PlayerDetail() {
       </div>
 
       {/* Secondary stats */}
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        <div className="card-static p-4 text-center accent-blue">
+      <div className="mb-8">
+        <div className="card-static p-4 text-center accent-blue" style={{ maxWidth: 220 }}>
           <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Avg Fitness</p>
           <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>
             {player.avg_fitness ?? "—"}
-          </p>
-        </div>
-        <div className="card-static p-4 text-center accent-gold">
-          <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>POTM Awards</p>
-          <p className="text-2xl font-bold mt-1" style={{ color: "var(--thunder-gold)" }}>
-            {player.potm_count}
           </p>
         </div>
       </div>
@@ -121,6 +199,26 @@ export default function PlayerDetail() {
         Fitness History
       </h2>
       <FitnessChart fitness={fitness} />
+
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            background: "var(--thunder-gold)",
+            color: "var(--surface-900)",
+            borderRadius: 8,
+            padding: "10px 18px",
+            fontWeight: 700,
+            fontSize: 14,
+            zIndex: 9999,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+          }}
+        >
+          {toast}
+        </div>
+      )}
 
       {isCoach && fitness !== null && (
         <div className="card-static p-4 mb-6">
@@ -253,6 +351,27 @@ function FitnessChart({ fitness }) {
         </AreaChart>
       </ResponsiveContainer>
     </div>
+  );
+}
+
+function PositionSelect({ label, value, onChange, positions, allowClear }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="text-xs rounded px-1 py-1"
+      style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }}
+      aria-label={label}
+    >
+      {allowClear && <option value="">— None —</option>}
+      {positions.map((g) => (
+        <optgroup key={g.group} label={g.group}>
+          {g.options.map((pos) => (
+            <option key={pos} value={pos}>{pos}</option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
   );
 }
 

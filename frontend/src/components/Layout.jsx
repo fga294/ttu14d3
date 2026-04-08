@@ -5,8 +5,7 @@ const navItems = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/players", label: "Players", icon: PlayersIcon },
   { to: "/games", label: "Games", icon: GamesIcon },
-  { to: "/leaderboard", label: "POTM", icon: TrophyIcon },
-  { to: "/messages", label: "Messages", icon: MessageIcon },
+  { to: "/formations", label: "Formations", icon: FormationIcon },
 ];
 
 export default function Layout() {
@@ -198,23 +197,12 @@ function GamesIcon({ size = 24 }) {
   );
 }
 
-function TrophyIcon({ size = 24 }) {
+function FormationIcon({ size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 9H4.5a2.5 2.5 0 010-5H6" />
-      <path d="M18 9h1.5a2.5 2.5 0 000-5H18" />
-      <path d="M4 22h16" />
-      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22" />
-      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22" />
-      <path d="M18 2H6v7a6 6 0 0012 0V2z" />
-    </svg>
-  );
-}
-
-function MessageIcon({ size = 24 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+      <rect x="2" y="3" width="20" height="18" rx="2" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
