@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Fitness, Player
-from schemas import FitnessCreate, FitnessOut
+from schemas import FitnessCreate, FitnessOut, FitnessUpdate
 from deps import require_coach
 
 router = APIRouter(prefix="/api/fitness", tags=["fitness"])
@@ -23,6 +23,18 @@ def create_fitness(payload: FitnessCreate, db: Session = Depends(get_db), _=Depe
         raise HTTPException(status_code=404, detail="Player not found")
     record = Fitness(**payload.model_dump())
     db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.put("/{fitness_id}", response_model=FitnessOut)
+def update_fitness(fitness_id: int, payload: FitnessUpdate, db: Session = Depends(get_db), _=Depends(require_coach)):
+    record = db.get(Fitness, fitness_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(record, field, value)
     db.commit()
     db.refresh(record)
     return record

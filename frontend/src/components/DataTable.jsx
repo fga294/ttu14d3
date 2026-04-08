@@ -13,30 +13,52 @@ export default function DataTable({ data, columns }) {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  if (data.length === 0) {
+    return (
+      <div className="card-static p-8 text-center">
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>No data to display</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto rounded border border-gray-200">
+    <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--surface-600)" }}>
       <table className="w-full text-sm text-left">
-        <thead className="bg-[#0047AB] text-white">
-          {table.getHeaderGroups().map((hg) => (
-            <tr key={hg.id}>
-              {hg.headers.map((h) => (
+        <thead>
+          <tr style={{ background: "var(--surface-700)", borderBottom: "1px solid var(--surface-600)" }}>
+            {table.getHeaderGroups().map((hg) =>
+              hg.headers.map((h) => (
                 <th
                   key={h.id}
-                  className="px-4 py-2 cursor-pointer select-none"
+                  className="px-4 py-2.5 cursor-pointer select-none text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: "var(--text-muted)" }}
                   onClick={h.column.getToggleSortingHandler()}
                 >
-                  {flexRender(h.column.columnDef.header, h.getContext())}
-                  {{ asc: " ▲", desc: " ▼" }[h.column.getIsSorted()] ?? ""}
+                  <span className="flex items-center gap-1">
+                    {flexRender(h.column.columnDef.header, h.getContext())}
+                    <span style={{ color: "var(--thunder-gold)", opacity: h.column.getIsSorted() ? 1 : 0 }}>
+                      {h.column.getIsSorted() === "asc" ? "↑" : h.column.getIsSorted() === "desc" ? "↓" : ""}
+                    </span>
+                  </span>
                 </th>
-              ))}
-            </tr>
-          ))}
+              ))
+            )}
+          </tr>
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-t hover:bg-gray-50">
+          {table.getRowModel().rows.map((row, i) => (
+            <tr
+              key={row.id}
+              style={{
+                background: i % 2 === 0 ? "var(--surface-800)" : "var(--surface-700)",
+                borderBottom: "1px solid var(--surface-600)",
+                transition: "var(--transition-fast)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-600)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? "var(--surface-800)" : "var(--surface-700)")}
+            >
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-4 py-2">
+                <td key={cell.id} className="px-4 py-2.5" style={{ color: "var(--text-primary)" }}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
