@@ -45,9 +45,6 @@ export default function Players() {
           {row.original.secondary_position && (
             <span className="badge badge-blue">{row.original.secondary_position}</span>
           )}
-          {row.original.tertiary_position && (
-            <span className="badge badge-gold" style={{ opacity: 0.7 }}>{row.original.tertiary_position}</span>
-          )}
         </div>
       ),
     },

@@ -20,12 +20,16 @@ export default function Dashboard() {
   const draws = games.filter((g) => g.our_score != null && g.our_score === g.their_score).length;
   const recent = games.slice(0, 5);
 
+  const played = wins + draws + losses;
+  const winPct = played > 0 ? Math.round(((wins + 0.5 * draws) / played) * 100) : 0;
+
   const stats = [
     { label: "Players", value: players.length, accent: "accent-gold" },
     { label: "Played", value: games.length, accent: "accent-blue" },
     { label: "Wins", value: wins, accent: "accent-success" },
     { label: "Draws", value: draws, accent: "accent-blue" },
     { label: "Losses", value: losses, accent: "accent-danger" },
+    { label: "Win %", value: `${winPct}%`, accent: "accent-gold" },
   ];
 
   return (
@@ -33,15 +37,15 @@ export default function Dashboard() {
       {/* Season header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold" style={{ color: "var(--thunder-gold)" }}>
-          Thornleigh Thunder
+          Thornleigh Thunder ⚡
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Under 14 Division 3 — 2025 Season
+          Under 14 Division 3 — 2026 Season
         </p>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
         {stats.map(({ label, value, accent }) => (
           <div key={label} className={`card-static p-3 ${accent}`}>
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
@@ -157,8 +161,8 @@ function DashboardSkeleton() {
         <div className="skeleton h-7 w-48 mb-2" />
         <div className="skeleton h-4 w-64" />
       </div>
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-8">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="card-static p-3">
             <div className="skeleton h-3 w-12 mb-2" />
             <div className="skeleton h-7 w-8" />
