@@ -18,6 +18,24 @@ class EventType(str, enum.Enum):
     red_card = "red_card"
 
 
+class Weather(str, enum.Enum):
+    sunny = "sunny"
+    cloudy = "cloudy"
+    overcast = "overcast"
+    light_rain = "light_rain"
+    heavy_rain = "heavy_rain"
+    windy = "windy"
+    stormy = "stormy"
+
+
+class PitchCondition(str, enum.Enum):
+    excellent = "excellent"
+    good = "good"
+    fair = "fair"
+    bad = "bad"
+    terrible = "terrible"
+
+
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -33,7 +51,6 @@ class Player(Base):
     number: Mapped[int] = mapped_column(Integer, nullable=False)
     position: Mapped[str] = mapped_column(String(30), nullable=False)
     secondary_position: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    tertiary_position: Mapped[str | None] = mapped_column(String(30), nullable=True)
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     events: Mapped[list["GameEvent"]] = relationship(back_populates="player")
     fitness_records: Mapped[list["Fitness"]] = relationship(back_populates="player")
@@ -48,6 +65,8 @@ class Game(Base):
     home_away: Mapped[str] = mapped_column(String(4), default="home")
     our_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     their_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    weather: Mapped[Weather | None] = mapped_column(Enum(Weather), nullable=True)
+    pitch_condition: Mapped[PitchCondition | None] = mapped_column(Enum(PitchCondition), nullable=True)
     events: Mapped[list["GameEvent"]] = relationship(back_populates="game")
 
 
@@ -76,7 +95,6 @@ class Formation(Base):
     __tablename__ = "formations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    formation_type: Mapped[str] = mapped_column(String(10), nullable=False)
-    starters = mapped_column(JSON, nullable=False)
+    positions = mapped_column(JSON, nullable=False)
     reserves = mapped_column(JSON, nullable=False, default=list)
 

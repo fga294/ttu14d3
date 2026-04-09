@@ -7,7 +7,7 @@ import DataTable from "../components/DataTable";
 export default function Games() {
   const [games, setGames] = useState(null);
   const { isCoach } = useAuth();
-  const [form, setForm] = useState({ date: "", opponent: "", location: "", home_away: "home" });
+  const [form, setForm] = useState({ date: "", opponent: "", location: "", home_away: "home", weather: "", pitch_condition: "" });
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
@@ -60,15 +60,37 @@ export default function Games() {
         );
       },
     },
+    {
+      accessorKey: "weather",
+      header: "Weather",
+      cell: ({ getValue }) => {
+        const v = getValue();
+        if (!v) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+        const labels = { sunny: "Sunny", cloudy: "Cloudy", overcast: "Overcast", light_rain: "Light Rain", heavy_rain: "Heavy Rain", windy: "Windy", stormy: "Stormy" };
+        return <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{labels[v] ?? v}</span>;
+      },
+    },
+    {
+      accessorKey: "pitch_condition",
+      header: "Pitch",
+      cell: ({ getValue }) => {
+        const v = getValue();
+        if (!v) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+        const colors = { excellent: "var(--success)", good: "var(--success)", fair: "var(--thunder-gold)", bad: "var(--danger)", terrible: "var(--danger)" };
+        const labels = { excellent: "Excellent", good: "Good", fair: "Fair", bad: "Bad", terrible: "Terrible" };
+        return <span className="text-sm font-medium" style={{ color: colors[v] ?? "var(--text-secondary)" }}>{labels[v] ?? v}</span>;
+      },
+    },
   ];
 
   const handleAdd = async (e) => {
     e.preventDefault();
     setAdding(true);
     try {
-      const game = await api.post("/games", form);
+      const payload = { ...form, weather: form.weather || null, pitch_condition: form.pitch_condition || null };
+      const game = await api.post("/games", payload);
       setGames([game, ...games]);
-      setForm({ date: "", opponent: "", location: "", home_away: "home" });
+      setForm({ date: "", opponent: "", location: "", home_away: "home", weather: "", pitch_condition: "" });
     } finally {
       setAdding(false);
     }
@@ -117,6 +139,32 @@ export default function Games() {
               <option value="home">Home</option>
               <option value="away">Away</option>
             </select>
+            <select
+              value={form.weather}
+              onChange={(e) => setForm({ ...form, weather: e.target.value })}
+              className="input-field"
+            >
+              <option value="">Weather (optional)</option>
+              <option value="sunny">Sunny</option>
+              <option value="cloudy">Cloudy</option>
+              <option value="overcast">Overcast</option>
+              <option value="light_rain">Light Rain</option>
+              <option value="heavy_rain">Heavy Rain</option>
+              <option value="windy">Windy</option>
+              <option value="stormy">Stormy</option>
+            </select>
+            <select
+              value={form.pitch_condition}
+              onChange={(e) => setForm({ ...form, pitch_condition: e.target.value })}
+              className="input-field"
+            >
+              <option value="">Pitch Condition (optional)</option>
+              <option value="excellent">Excellent</option>
+              <option value="good">Good</option>
+              <option value="fair">Fair</option>
+              <option value="bad">Bad</option>
+              <option value="terrible">Terrible</option>
+            </select>
           </div>
           <button type="submit" className="btn-primary" disabled={adding}>
             {adding ? "Adding..." : "Add Game"}
@@ -138,7 +186,7 @@ function TableSkeleton() {
     <div className="card-static overflow-hidden">
       <div className="p-3" style={{ background: "var(--surface-700)" }}>
         <div className="flex gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-3 flex-1" />)}
+          {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-3 flex-1" />)}
         </div>
       </div>
       {[...Array(5)].map((_, i) => (
