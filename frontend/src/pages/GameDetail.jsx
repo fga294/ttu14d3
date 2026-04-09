@@ -60,6 +60,8 @@ export default function GameDetail() {
     setScoreForm({
       our_score: game.our_score ?? "",
       their_score: game.their_score ?? "",
+      weather: game.weather ?? "",
+      pitch_condition: game.pitch_condition ?? "",
     });
     setEditingScore(true);
   };
@@ -72,10 +74,12 @@ export default function GameDetail() {
       home_away: game.home_away,
       our_score: scoreForm.our_score !== "" ? parseInt(scoreForm.our_score) : null,
       their_score: scoreForm.their_score !== "" ? parseInt(scoreForm.their_score) : null,
+      weather: scoreForm.weather || null,
+      pitch_condition: scoreForm.pitch_condition || null,
     });
     setGame(updated);
     setEditingScore(false);
-    showToast("Score updated");
+    showToast("Game updated");
   };
 
   if (!game) return <GameDetailSkeleton />;
@@ -110,11 +114,17 @@ export default function GameDetail() {
 
       {/* Match header card */}
       <div className="card-static p-6 mb-6 text-center">
-        <p className="text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>
+        <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
           {game.date} · {game.location || "TBD"} · {game.home_away.toUpperCase()}
+        </p>
+        <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+          {game.weather ? { sunny: "☀️ Sunny", cloudy: "☁️ Cloudy", overcast: "🌥️ Overcast", light_rain: "🌦️ Light Rain", heavy_rain: "🌧️ Heavy Rain", windy: "💨 Windy", stormy: "⛈️ Stormy" }[game.weather] : ""}
+          {game.weather && game.pitch_condition ? " · " : ""}
+          {game.pitch_condition ? `Pitch: ${game.pitch_condition.charAt(0).toUpperCase() + game.pitch_condition.slice(1)}` : ""}
         </p>
 
         {editingScore ? (
+          <>
           <div className="flex items-center justify-center gap-4 mb-3">
             <div>
               <p className="text-sm font-medium mb-1" style={{ color: "var(--thunder-gold)" }}>Thunder</p>
@@ -140,6 +150,35 @@ export default function GameDetail() {
               />
             </div>
           </div>
+          <div className="flex justify-center gap-2 mb-3">
+            <select
+              value={scoreForm.weather}
+              onChange={(e) => setScoreForm({ ...scoreForm, weather: e.target.value })}
+              className="input-field text-xs"
+            >
+              <option value="">Weather (optional)</option>
+              <option value="sunny">Sunny</option>
+              <option value="cloudy">Cloudy</option>
+              <option value="overcast">Overcast</option>
+              <option value="light_rain">Light Rain</option>
+              <option value="heavy_rain">Heavy Rain</option>
+              <option value="windy">Windy</option>
+              <option value="stormy">Stormy</option>
+            </select>
+            <select
+              value={scoreForm.pitch_condition}
+              onChange={(e) => setScoreForm({ ...scoreForm, pitch_condition: e.target.value })}
+              className="input-field text-xs"
+            >
+              <option value="">Pitch Condition (optional)</option>
+              <option value="excellent">Excellent</option>
+              <option value="good">Good</option>
+              <option value="fair">Fair</option>
+              <option value="bad">Bad</option>
+              <option value="terrible">Terrible</option>
+            </select>
+          </div>
+          </>
         ) : (
           <div className="flex items-center justify-center gap-6 mb-3">
             <div>

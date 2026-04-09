@@ -16,7 +16,7 @@ export default function PlayerDetail() {
   const [newEntry, setNewEntry] = useState({ date: "", rating: "", notes: "" });
   const [toast, setToast] = useState(null);
   const [editingPositions, setEditingPositions] = useState(false);
-  const [posForm, setPosForm] = useState({ position: "", secondary_position: "", tertiary_position: "" });
+  const [posForm, setPosForm] = useState({ position: "", secondary_position: "" });
 
   const POSITIONS = [
     { group: "Goalkeeper", options: ["GK"] },
@@ -29,7 +29,6 @@ export default function PlayerDetail() {
     setPosForm({
       position: player.position,
       secondary_position: player.secondary_position ?? "",
-      tertiary_position: player.tertiary_position ?? "",
     });
     setEditingPositions(true);
   };
@@ -40,13 +39,11 @@ export default function PlayerDetail() {
       number: player.number,
       position: posForm.position,
       secondary_position: posForm.secondary_position || null,
-      tertiary_position: posForm.tertiary_position || null,
     });
     setPlayer({
       ...player,
       position: posForm.position,
       secondary_position: posForm.secondary_position || null,
-      tertiary_position: posForm.tertiary_position || null,
     });
     setEditingPositions(false);
     showToast("Positions updated");
@@ -99,12 +96,16 @@ export default function PlayerDetail() {
 
   if (!player) return <PlayerSkeleton />;
 
-  const mainStats = [
-    { label: "Goals", value: player.goals, accent: "accent-gold" },
-    { label: "Assists", value: player.assists, accent: "accent-blue" },
-    { label: "Yellow Cards", value: player.yellow_cards, accent: "accent-gold" },
-    { label: "Red Cards", value: player.red_cards, accent: "accent-danger" },
-  ];
+  const goalsAssists = player.goals + player.assists;
+
+  const sortedFitness = fitness ? [...fitness].sort((a, b) => new Date(b.date) - new Date(a.date)) : [];
+  const latestFitness = sortedFitness[0]?.rating ?? null;
+  const prevFitness = sortedFitness[1]?.rating ?? null;
+  const fitnessTrend = latestFitness == null || prevFitness == null ? "none"
+    : latestFitness > prevFitness ? "up"
+    : latestFitness < prevFitness ? "down"
+    : "same";
+  const fitnessPctChange = prevFitness ? (((latestFitness - prevFitness) / prevFitness) * 100) : null;
 
   return (
     <div>
@@ -144,13 +145,6 @@ export default function PlayerDetail() {
                 positions={POSITIONS}
                 allowClear
               />
-              <PositionSelect
-                label="Tertiary"
-                value={posForm.tertiary_position}
-                onChange={(v) => setPosForm({ ...posForm, tertiary_position: v })}
-                positions={POSITIONS}
-                allowClear
-              />
               <button onClick={handlePositionSave} className="text-xs rounded px-2 py-1 font-semibold"
                 style={{ background: "var(--thunder-gold)", color: "var(--surface-900)" }}>Save</button>
               <button onClick={() => setEditingPositions(false)} className="text-xs rounded px-2 py-1"
@@ -162,9 +156,6 @@ export default function PlayerDetail() {
               {player.secondary_position && (
                 <span className="badge badge-blue">{player.secondary_position}</span>
               )}
-              {player.tertiary_position && (
-                <span className="badge badge-gold" style={{ opacity: 0.7 }}>{player.tertiary_position}</span>
-              )}
               {isCoach && (
                 <button onClick={handleEditPositions} className="text-xs rounded px-2 py-1 ml-1"
                   style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Edit</button>
@@ -174,31 +165,66 @@ export default function PlayerDetail() {
         </div>
       </div>
 
-      {/* Main stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {mainStats.map(({ label, value, accent }) => (
-          <div key={label} className={`card-static p-4 text-center ${accent}`}>
-            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Secondary stats */}
-      <div className="mb-8">
-        <div className="card-static p-4 text-center accent-blue" style={{ maxWidth: 220 }}>
-          <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Avg Fitness</p>
-          <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>
-            {player.avg_fitness ?? "—"}
-          </p>
-        </div>
-      </div>
-
       {/* Fitness history */}
       <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
         Fitness History
       </h2>
       <FitnessChart fitness={fitness} />
+
+      {/* Main stats */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="card-static p-4 text-center accent-gold">
+          <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Goals + Assists</p>
+          <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{goalsAssists}</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+            {player.goals}G · {player.assists}A
+          </p>
+        </div>
+        <div className="card-static p-4 text-center">
+          <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Latest Fitness Test Result</p>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+              {latestFitness != null ? latestFitness : "—"}
+            </p>
+            {fitnessTrend === "up" && (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3L13 10H3L8 3Z" fill="#22C55E" />
+              </svg>
+            )}
+            {fitnessTrend === "down" && (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 13L3 6H13L8 13Z" fill="#DC2626" />
+              </svg>
+            )}
+            {fitnessTrend === "same" && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <rect x="1" y="1" width="10" height="10" rx="2" fill="#3B82F6" />
+              </svg>
+            )}
+          </div>
+          {fitnessPctChange != null && (
+            <p className="text-xs font-medium mt-1" style={{ color: fitnessPctChange > 0 ? "#22C55E" : fitnessPctChange < 0 ? "#DC2626" : "var(--text-muted)" }}>
+              {fitnessPctChange > 0 ? "+" : ""}{fitnessPctChange.toFixed(1)}%
+            </p>
+          )}
+        </div>
+        <div className="card-static p-4 flex items-center justify-center gap-5">
+          <div className="flex items-center gap-2">
+            <svg width="18" height="24" viewBox="0 0 18 24" fill="none">
+              <rect x="1" y="1" width="16" height="22" rx="2" fill="#FACC15" stroke="#CA8A04" strokeWidth="1"/>
+              <rect x="4" y="4" width="10" height="2" rx="0.5" fill="#CA8A04" opacity="0.3"/>
+            </svg>
+            <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{player.yellow_cards}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg width="18" height="24" viewBox="0 0 18 24" fill="none">
+              <rect x="1" y="1" width="16" height="22" rx="2" fill="#DC2626" stroke="#991B1B" strokeWidth="1"/>
+              <rect x="4" y="4" width="10" height="2" rx="0.5" fill="#991B1B" opacity="0.3"/>
+            </svg>
+            <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{player.red_cards}</span>
+          </div>
+        </div>
+      </div>
 
       {toast && (
         <div
@@ -386,8 +412,8 @@ function PlayerSkeleton() {
           <div className="skeleton h-4 w-20" />
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {[...Array(3)].map((_, i) => (
           <div key={i} className="card-static p-4 text-center">
             <div className="skeleton h-3 w-16 mx-auto mb-2" />
             <div className="skeleton h-7 w-8 mx-auto" />
