@@ -1,7 +1,7 @@
 from datetime import date as _date
 from typing import Optional
 from pydantic import BaseModel, Field
-from models import EventType, Role
+from models import EventType, PitchCondition, Role, Weather
 
 
 # --- Auth ---
@@ -35,7 +35,6 @@ class PlayerCreate(BaseModel):
     number: int = Field(ge=1, le=99)
     position: str = Field(max_length=30)
     secondary_position: str | None = Field(default=None, max_length=30)
-    tertiary_position: str | None = Field(default=None, max_length=30)
     date_of_birth: _date | None = None
 
 
@@ -45,7 +44,6 @@ class PlayerOut(BaseModel):
     number: int
     position: str
     secondary_position: str | None
-    tertiary_position: str | None
     date_of_birth: _date | None
     model_config = {"from_attributes": True}
 
@@ -66,6 +64,8 @@ class GameCreate(BaseModel):
     home_away: str = Field(default="home", pattern="^(home|away)$")
     our_score: int | None = None
     their_score: int | None = None
+    weather: Weather | None = None
+    pitch_condition: PitchCondition | None = None
 
 
 class GameOut(BaseModel):
@@ -76,6 +76,8 @@ class GameOut(BaseModel):
     home_away: str
     our_score: int | None
     their_score: int | None
+    weather: Weather | None
+    pitch_condition: PitchCondition | None
     model_config = {"from_attributes": True}
 
 
@@ -119,24 +121,27 @@ class FitnessOut(BaseModel):
 
 
 # --- Formation ---
+class PositionEntry(BaseModel):
+    player_id: int
+    x: float
+    y: float
+
+
 class FormationCreate(BaseModel):
     name: str = Field(max_length=100)
-    formation_type: str = Field(max_length=10)
-    starters: list[int]
+    positions: list[PositionEntry]
     reserves: list[int] = []
 
 
 class FormationUpdate(BaseModel):
     name: str | None = None
-    formation_type: str | None = None
-    starters: list[int] | None = None
+    positions: list[PositionEntry] | None = None
     reserves: list[int] | None = None
 
 
 class FormationOut(BaseModel):
     id: int
     name: str
-    formation_type: str
-    starters: list[int]
+    positions: list[PositionEntry]
     reserves: list[int]
     model_config = {"from_attributes": True}
