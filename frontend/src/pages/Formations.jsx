@@ -35,7 +35,15 @@ export default function Formations() {
     Promise.all([api.get("/formations"), api.get("/players")]).then(([fList, pList]) => {
       setFormations(fList);
       setPlayers(pList);
-      if (fList.length > 0) loadFormation(fList[0], pList);
+      if (fList.length > 0) {
+        const f = fList[0];
+        setPositions(f.positions);
+        const onField = new Set(f.positions.map((p) => p.player_id));
+        const extra = pList.filter((p) => !onField.has(p.id) && !f.reserves.includes(p.id)).map((p) => p.id);
+        setReserves([...f.reserves, ...extra]);
+        setFormationName(f.name);
+        setActiveId(f.id);
+      }
       setLoading(false);
     });
   }, []);
