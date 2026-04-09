@@ -19,6 +19,8 @@ app = FastAPI(title="TTU14D3 API")
 
 origins = [
     os.getenv("FRONTEND_URL", "http://localhost:3000"),
+    "https://ttu14.team",
+    "https://www.ttu14.team",
 ]
 
 app.add_middleware(
