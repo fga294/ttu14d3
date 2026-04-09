@@ -1,0 +1,15 @@
+[Unit]
+Description=TTU14D3 FastAPI Backend
+After=network.target mariadb.service
+
+[Service]
+User=opc
+Group=opc
+WorkingDirectory=/opt/ttu14d3/backend
+Environment="PATH=/opt/ttu14d3/venv/bin:/usr/bin"
+ExecStart=/opt/ttu14d3/venv/bin/gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:3001
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
