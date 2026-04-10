@@ -83,7 +83,7 @@ class GameOut(BaseModel):
 
 # --- Game Event ---
 class GameEventCreate(BaseModel):
-    player_id: int
+    player_id: int | None = None
     event_type: EventType
     minute: int | None = None
 
@@ -91,7 +91,7 @@ class GameEventCreate(BaseModel):
 class GameEventOut(BaseModel):
     id: int
     game_id: int
-    player_id: int
+    player_id: int | None
     event_type: EventType
     minute: int | None
     model_config = {"from_attributes": True}

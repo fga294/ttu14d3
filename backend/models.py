@@ -16,6 +16,7 @@ class EventType(str, enum.Enum):
     assist = "assist"
     yellow_card = "yellow_card"
     red_card = "red_card"
+    opponent_goal = "opponent_goal"
 
 
 class Weather(str, enum.Enum):
@@ -74,11 +75,11 @@ class GameEvent(Base):
     __tablename__ = "game_events"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), nullable=False)
-    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
+    player_id: Mapped[int | None] = mapped_column(ForeignKey("players.id"), nullable=True)
     event_type: Mapped[EventType] = mapped_column(Enum(EventType), nullable=False)
     minute: Mapped[int | None] = mapped_column(Integer, nullable=True)
     game: Mapped["Game"] = relationship(back_populates="events")
-    player: Mapped["Player"] = relationship(back_populates="events")
+    player: Mapped["Player | None"] = relationship(back_populates="events")
 
 
 class Fitness(Base):
