@@ -25,6 +25,26 @@ export default function PlayerDetail() {
     { group: "Attackers", options: ["LW", "RW", "LF", "RF", "CF", "ST"] },
   ];
 
+  const POSITION_NAMES = {
+    GK: "Goalkeeper",
+    CB: "Centre Back",
+    LB: "Left Back",
+    RB: "Right Back",
+    LWB: "Left Wing Back",
+    RWB: "Right Wing Back",
+    CDM: "Central Defensive Midfielder",
+    CM: "Central Midfielder",
+    CAM: "Central Attacking Midfielder",
+    LM: "Left Midfielder",
+    RM: "Right Midfielder",
+    LW: "Left Winger",
+    RW: "Right Winger",
+    LF: "Left Forward",
+    RF: "Right Forward",
+    CF: "Centre Forward",
+    ST: "Striker",
+  };
+
   const handleEditPositions = () => {
     setPosForm({
       position: player.position,
@@ -151,16 +171,24 @@ export default function PlayerDetail() {
                 style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Cancel</button>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-1 mt-1">
-              <span className="badge badge-gold">{player.position}</span>
-              {player.secondary_position && (
-                <span className="badge badge-blue">{player.secondary_position}</span>
-              )}
-              {isCoach && (
-                <button onClick={handleEditPositions} className="text-xs rounded px-2 py-1 ml-1"
-                  style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Edit</button>
-              )}
-            </div>
+            <>
+              <div className="flex flex-wrap items-center gap-1 mt-1">
+                <span className="badge badge-gold">{player.position}</span>
+                {player.secondary_position && (
+                  <span className="badge badge-blue">{player.secondary_position}</span>
+                )}
+                {isCoach && (
+                  <button onClick={handleEditPositions} className="text-xs rounded px-2 py-1 ml-1"
+                    style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Edit</button>
+                )}
+              </div>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                {[player.position, player.secondary_position]
+                  .filter(Boolean)
+                  .map((code) => POSITION_NAMES[code] ?? code)
+                  .join(" / ")}
+              </p>
+            </>
           )}
         </div>
       </div>
