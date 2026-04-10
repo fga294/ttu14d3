@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import GameEvent, Game, Player
+from models import GameEvent, Game, Player, EventType
 from schemas import GameEventCreate, GameEventOut
 from deps import require_coach
 
@@ -20,8 +20,14 @@ def list_events(game_id: int, db: Session = Depends(get_db)):
 def create_event(game_id: int, payload: GameEventCreate, db: Session = Depends(get_db), _=Depends(require_coach)):
     if not db.get(Game, game_id):
         raise HTTPException(status_code=404, detail="Game not found")
-    if not db.get(Player, payload.player_id):
-        raise HTTPException(status_code=404, detail="Player not found")
+    if payload.event_type == EventType.opponent_goal:
+        if payload.player_id is not None:
+            raise HTTPException(status_code=400, detail="Opponent goals must not have a player_id")
+    else:
+        if payload.player_id is None:
+            raise HTTPException(status_code=400, detail="player_id is required for this event type")
+        if not db.get(Player, payload.player_id):
+            raise HTTPException(status_code=404, detail="Player not found")
     event = GameEvent(game_id=game_id, **payload.model_dump())
     db.add(event)
     db.commit()
