@@ -8,6 +8,7 @@ const EVENT_ICONS = {
   assist: "👟",
   yellow_card: "🟨",
   red_card: "🟥",
+  opponent_goal: "⚽",
 };
 
 const EVENT_BADGES = {
@@ -15,6 +16,7 @@ const EVENT_BADGES = {
   assist: "badge-blue",
   yellow_card: "badge-warning",
   red_card: "badge-danger",
+  opponent_goal: "badge-danger",
 };
 
 export default function GameDetail() {
@@ -44,8 +46,9 @@ export default function GameDetail() {
     e.preventDefault();
     setAdding(true);
     try {
+      const isOpponent = form.event_type === "opponent_goal";
       const ev = await api.post(`/games/${id}/events`, {
-        player_id: parseInt(form.player_id),
+        player_id: isOpponent ? null : parseInt(form.player_id),
         event_type: form.event_type,
         minute: form.minute ? parseInt(form.minute) : null,
       });
@@ -261,26 +264,29 @@ export default function GameDetail() {
         </div>
       ) : (
         <div className="space-y-2 mb-4">
-          {sortedEvents.map((ev) => (
-            <div key={ev.id} className="card-static p-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-lg">{EVENT_ICONS[ev.event_type] || "•"}</span>
-                <div>
-                  <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
-                    {playerName(ev.player_id)}
-                  </p>
-                  <span className={`badge ${EVENT_BADGES[ev.event_type] || "badge-blue"}`}>
-                    {ev.event_type.replace("_", " ")}
-                  </span>
+          {sortedEvents.map((ev) => {
+            const isOpponent = ev.event_type === "opponent_goal";
+            return (
+              <div key={ev.id} className="card-static p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{EVENT_ICONS[ev.event_type] || "•"}</span>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
+                      {isOpponent ? game.opponent : playerName(ev.player_id)}
+                    </p>
+                    <span className={`badge ${EVENT_BADGES[ev.event_type] || "badge-blue"}`}>
+                      {isOpponent ? "goal" : ev.event_type.replace("_", " ")}
+                    </span>
+                  </div>
                 </div>
+                {ev.minute && (
+                  <span className="text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>
+                    {ev.minute}'
+                  </span>
+                )}
               </div>
-              {ev.minute && (
-                <span className="text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>
-                  {ev.minute}'
-                </span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -309,26 +315,36 @@ export default function GameDetail() {
         <form onSubmit={handleAdd} className="card-static p-4 mt-4">
           <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>ADD EVENT</p>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-            <select
-              value={form.player_id}
-              onChange={(e) => setForm({ ...form, player_id: e.target.value })}
-              className="input-field sm:col-span-2"
-              required
-            >
-              <option value="">Select player...</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>#{p.number} {p.name}</option>
-              ))}
-            </select>
+            {form.event_type === "opponent_goal" ? (
+              <div
+                className="input-field sm:col-span-2 flex items-center"
+                style={{ color: "var(--text-muted)", fontStyle: "italic" }}
+              >
+                {game.opponent} (opponent)
+              </div>
+            ) : (
+              <select
+                value={form.player_id}
+                onChange={(e) => setForm({ ...form, player_id: e.target.value })}
+                className="input-field sm:col-span-2"
+                required
+              >
+                <option value="">Select player...</option>
+                {players.map((p) => (
+                  <option key={p.id} value={p.id}>#{p.number} {p.name}</option>
+                ))}
+              </select>
+            )}
             <select
               value={form.event_type}
-              onChange={(e) => setForm({ ...form, event_type: e.target.value })}
+              onChange={(e) => setForm({ ...form, event_type: e.target.value, player_id: "" })}
               className="input-field"
             >
               <option value="goal">Goal</option>
               <option value="assist">Assist</option>
               <option value="yellow_card">Yellow Card</option>
               <option value="red_card">Red Card</option>
+              <option value="opponent_goal">Opponent Goal</option>
             </select>
             <div className="flex gap-2">
               <input
