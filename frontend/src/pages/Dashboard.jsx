@@ -45,17 +45,26 @@ export default function Dashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
-        {stats.map(({ label, value, accent }) => (
-          <div key={label} className={`card-static p-3 ${accent}`}>
-            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-              {label}
-            </p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--text-primary)" }}>
-              {value}
-            </p>
-          </div>
-        ))}
+      <div className="card-static mb-8 overflow-hidden">
+        <div className="grid grid-cols-3 md:grid-cols-6">
+          {stats.map(({ label, value, accent }, i) => (
+            <div
+              key={label}
+              className={`p-3 ${accent}`}
+              style={{
+                borderRight: i < stats.length - 1 ? "1px solid var(--surface-600)" : undefined,
+                borderBottom: i < 3 ? "1px solid var(--surface-600)" : undefined,
+              }}
+            >
+              <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                {label}
+              </p>
+              <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--text-primary)" }}>
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Recent games */}

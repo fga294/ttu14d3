@@ -18,9 +18,11 @@ export default function Games() {
     {
       accessorKey: "date",
       header: "Date",
-      cell: ({ getValue }) => (
-        <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{getValue()}</span>
-      ),
+      cell: ({ getValue }) => {
+        const d = new Date(getValue() + "T00:00:00");
+        const formatted = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+        return <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{formatted}</span>;
+      },
     },
     {
       accessorKey: "opponent",

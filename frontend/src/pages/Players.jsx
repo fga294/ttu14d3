@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
 import DataTable from "../components/DataTable";
@@ -9,6 +9,7 @@ export default function Players() {
   const { isCoach } = useAuth();
   const [form, setForm] = useState({ name: "", number: "", position: "" });
   const [adding, setAdding] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get("/players").then(setPlayers);
@@ -26,14 +27,10 @@ export default function Players() {
     {
       accessorKey: "name",
       header: "Name",
-      cell: ({ row }) => (
-        <Link
-          to={`/players/${row.original.id}`}
-          className="font-medium hover:underline"
-          style={{ color: "var(--thunder-blue-light)" }}
-        >
-          {row.original.name}
-        </Link>
+      cell: ({ getValue }) => (
+        <span className="font-medium" style={{ color: "var(--thunder-blue-light)" }}>
+          {getValue()}
+        </span>
       ),
     },
     {
@@ -111,7 +108,7 @@ export default function Players() {
       {players === null ? (
         <TableSkeleton rows={6} cols={3} />
       ) : (
-        <DataTable data={players} columns={columns} />
+        <DataTable data={players} columns={columns} onRowClick={(player) => navigate(`/players/${player.id}`)} />
       )}
     </div>
   );
