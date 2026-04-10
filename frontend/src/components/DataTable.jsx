@@ -1,7 +1,7 @@
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { useState } from "react";
 
-export default function DataTable({ data, columns }) {
+export default function DataTable({ data, columns, onRowClick }) {
   const [sorting, setSorting] = useState([]);
 
   const table = useReactTable({
@@ -53,7 +53,9 @@ export default function DataTable({ data, columns }) {
                 background: i % 2 === 0 ? "var(--surface-800)" : "var(--surface-700)",
                 borderBottom: "1px solid var(--surface-600)",
                 transition: "var(--transition-fast)",
+                cursor: onRowClick ? "pointer" : undefined,
               }}
+              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-600)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? "var(--surface-800)" : "var(--surface-700)")}
             >
