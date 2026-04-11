@@ -17,6 +17,7 @@ export default function PlayerDetail() {
   const [toast, setToast] = useState(null);
   const [editingPositions, setEditingPositions] = useState(false);
   const [posForm, setPosForm] = useState({ position: "", secondary_position: "" });
+  const [showLevelGuide, setShowLevelGuide] = useState(false);
 
   const POSITIONS = [
     { group: "Goalkeeper", options: ["GK"] },
@@ -194,10 +195,22 @@ export default function PlayerDetail() {
       </div>
 
       {/* Fitness history */}
-      <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
-        Fitness History
-      </h2>
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+          Fitness History
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowLevelGuide(true)}
+          className="text-xs font-medium underline underline-offset-2"
+          style={{ color: "var(--thunder-gold)", background: "transparent", border: "none", cursor: "pointer" }}
+        >
+          What do these levels mean?
+        </button>
+      </div>
       <FitnessChart fitness={fitness} />
+
+      {showLevelGuide && <FitnessLevelGuide onClose={() => setShowLevelGuide(false)} />}
 
       {/* Main stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
@@ -404,6 +417,88 @@ function FitnessChart({ fitness }) {
           />
         </AreaChart>
       </ResponsiveContainer>
+    </div>
+  );
+}
+
+function FitnessLevelGuide({ onClose }) {
+  const rows = [
+    { level: "7 – 9", category: "Average school boys" },
+    { level: "9 – 10.5", category: "Good grassroots players" },
+    { level: "11 – 13+", category: "Elite academy players" },
+  ];
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.65)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9998,
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="card-static"
+        style={{
+          background: "var(--surface-800)",
+          borderRadius: 12,
+          padding: 20,
+          maxWidth: 380,
+          width: "100%",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+            Fitness Level Guide
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="text-lg font-bold"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              lineHeight: 1,
+              padding: "0 4px",
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+          Approximate benchmarks for interpreting fitness test results.
+        </p>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Level</th>
+              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Category</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.level} style={{ borderBottom: "1px solid var(--surface-700)" }}>
+                <td style={{ padding: "8px", fontWeight: 700, color: "var(--thunder-gold)", whiteSpace: "nowrap" }}>
+                  {r.level}
+                </td>
+                <td style={{ padding: "8px", color: "var(--text-secondary)" }}>
+                  {r.category}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
