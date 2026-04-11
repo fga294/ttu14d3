@@ -26,6 +26,23 @@ export default function PlayerDetail() {
     { group: "Attackers", options: ["LW", "RW", "LF", "RF", "CF", "ST"] },
   ];
 
+  // Fitness score → letter grade mapping.
+  // Ordered high-to-low so the first match wins in `fitnessToGrade`.
+  const FITNESS_GRADES = [
+    { min: 11,   letter: "A+", badgeClass: "badge-success", label: "Elite academy" },
+    { min: 10,   letter: "A",  badgeClass: "badge-success", label: "Top grassroots" },
+    { min: 9,    letter: "B+", badgeClass: "badge-gold",    label: "Strong grassroots" },
+    { min: 8,    letter: "B",  badgeClass: "badge-gold",    label: "Above average" },
+    { min: 7,    letter: "C",  badgeClass: "badge-warning", label: "Average school boys" },
+    { min: 6,    letter: "D",  badgeClass: "badge-warning", label: "Below average" },
+    { min: -Infinity, letter: "F", badgeClass: "badge-danger", label: "Needs improvement" },
+  ];
+
+  const fitnessToGrade = (score) => {
+    if (score == null) return null;
+    return FITNESS_GRADES.find((g) => score >= g.min) ?? null;
+  };
+
   const POSITION_NAMES = {
     GK: "Goalkeeper",
     CB: "Centre Back",
@@ -127,6 +144,7 @@ export default function PlayerDetail() {
     : latestFitness < prevFitness ? "down"
     : "same";
   const fitnessPctChange = prevFitness ? (((latestFitness - prevFitness) / prevFitness) * 100) : null;
+  const latestGrade = fitnessToGrade(latestFitness);
 
   return (
     <div>
@@ -178,6 +196,14 @@ export default function PlayerDetail() {
                 {player.secondary_position && (
                   <span className="badge badge-blue">{player.secondary_position}</span>
                 )}
+                {latestGrade && (
+                  <span
+                    className={`badge ${latestGrade.badgeClass}`}
+                    title={`Fitness ${latestFitness} → ${latestGrade.letter} (${latestGrade.label})`}
+                  >
+                    {latestGrade.letter}
+                  </span>
+                )}
                 {isCoach && (
                   <button onClick={handleEditPositions} className="text-xs rounded px-2 py-1 ml-1"
                     style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Edit</button>
@@ -210,7 +236,12 @@ export default function PlayerDetail() {
       </div>
       <FitnessChart fitness={fitness} />
 
-      {showLevelGuide && <FitnessLevelGuide onClose={() => setShowLevelGuide(false)} />}
+      {showLevelGuide && (
+        <FitnessLevelGuide
+          grades={FITNESS_GRADES}
+          onClose={() => setShowLevelGuide(false)}
+        />
+      )}
 
       {/* Main stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
@@ -311,7 +342,7 @@ export default function PlayerDetail() {
                           className="text-xs rounded px-1 py-1" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
                       </td>
                       <td style={{ padding: "6px" }}>
-                        <input type="number" min="1" max="10" step="0.1" value={editForm.rating} onChange={(e) => setEditForm({ ...editForm, rating: e.target.value })}
+                        <input type="number" min="1" max="15" step="0.1" value={editForm.rating} onChange={(e) => setEditForm({ ...editForm, rating: e.target.value })}
                           className="text-xs rounded px-1 py-1 w-16" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
                       </td>
                       <td style={{ padding: "6px" }}>
@@ -328,7 +359,7 @@ export default function PlayerDetail() {
                   ) : (
                     <>
                       <td style={{ padding: "6px", color: "var(--text-secondary)" }}>{f.date}</td>
-                      <td style={{ padding: "6px", fontWeight: 700, color: "var(--thunder-gold)" }}>{f.rating}/10</td>
+                      <td style={{ padding: "6px", fontWeight: 700, color: "var(--thunder-gold)" }}>{f.rating}</td>
                       <td style={{ padding: "6px", color: "var(--text-muted)" }}>{f.notes ?? "—"}</td>
                       <td style={{ padding: "6px", whiteSpace: "nowrap" }}>
                         <button onClick={() => handleEditStart(f)} className="text-xs rounded px-2 py-1 mr-1"
@@ -347,7 +378,7 @@ export default function PlayerDetail() {
                     className="text-xs rounded px-1 py-1" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
                 </td>
                 <td style={{ padding: "6px" }}>
-                  <input type="number" min="1" max="10" step="0.1" placeholder="1–10" value={newEntry.rating}
+                  <input type="number" min="1" max="15" step="0.1" placeholder="1–15" value={newEntry.rating}
                     onChange={(e) => setNewEntry({ ...newEntry, rating: e.target.value })}
                     className="text-xs rounded px-1 py-1 w-16" style={{ background: "var(--surface-700)", color: "var(--text-primary)", border: "none" }} />
                 </td>
@@ -401,10 +432,10 @@ function FitnessChart({ fitness }) {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} />
-          <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+          <YAxis domain={[0, 15]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ background: "var(--surface-800)", border: "none", borderRadius: 8, fontSize: 12 }}
-            formatter={(value) => [`${value}/10`, "Rating"]}
+            formatter={(value) => [value, "Rating"]}
           />
           <Area
             type="monotone"
@@ -421,12 +452,24 @@ function FitnessChart({ fitness }) {
   );
 }
 
-function FitnessLevelGuide({ onClose }) {
-  const rows = [
+function FitnessLevelGuide({ grades, onClose }) {
+  const benchmarkRows = [
     { level: "7 – 9", category: "Average school boys" },
     { level: "9 – 10.5", category: "Good grassroots players" },
     { level: "11 – 13+", category: "Elite academy players" },
   ];
+
+  // Turn the [{min, letter, label, badgeClass}] array (ordered high→low)
+  // into human-readable ranges for the grade table. Each row's upper bound
+  // is the previous row's lower bound; top row is open-ended (≥ min).
+  const gradeRows = grades.map((g, i) => {
+    const prev = grades[i - 1];
+    let range;
+    if (!prev) range = `≥ ${g.min}`;
+    else if (g.min === -Infinity) range = `< ${prev.min}`;
+    else range = `${g.min} – <${prev.min}`;
+    return { range, letter: g.letter, label: g.label, badgeClass: g.badgeClass };
+  });
 
   return (
     <div
@@ -449,8 +492,10 @@ function FitnessLevelGuide({ onClose }) {
           background: "var(--surface-800)",
           borderRadius: 12,
           padding: 20,
-          maxWidth: 380,
+          maxWidth: 420,
           width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
         }}
       >
@@ -475,8 +520,43 @@ function FitnessLevelGuide({ onClose }) {
             ×
           </button>
         </div>
+
+        <p className="text-xs mb-2 font-semibold uppercase" style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}>
+          Score → Grade
+        </p>
         <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-          Approximate benchmarks for interpreting fitness test results.
+          Letter grade shown next to a player's positions is derived from their latest fitness score.
+        </p>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 20 }}>
+          <thead>
+            <tr style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Score</th>
+              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Grade</th>
+              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gradeRows.map((r) => (
+              <tr key={r.letter} style={{ borderBottom: "1px solid var(--surface-700)" }}>
+                <td style={{ padding: "8px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                  {r.range}
+                </td>
+                <td style={{ padding: "8px" }}>
+                  <span className={`badge ${r.badgeClass}`}>{r.letter}</span>
+                </td>
+                <td style={{ padding: "8px", color: "var(--text-muted)" }}>
+                  {r.label}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <p className="text-xs mb-2 font-semibold uppercase" style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}>
+          Benchmark reference
+        </p>
+        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+          Approximate test level categories from youth football fitness research.
         </p>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
@@ -486,7 +566,7 @@ function FitnessLevelGuide({ onClose }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {benchmarkRows.map((r) => (
               <tr key={r.level} style={{ borderBottom: "1px solid var(--surface-700)" }}>
                 <td style={{ padding: "8px", fontWeight: 700, color: "var(--thunder-gold)", whiteSpace: "nowrap" }}>
                   {r.level}

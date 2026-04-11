@@ -101,13 +101,13 @@ class GameEventOut(BaseModel):
 class FitnessCreate(BaseModel):
     player_id: int
     date: _date
-    rating: float = Field(ge=1, le=10)
+    rating: float = Field(ge=1, le=15)
     notes: str | None = None
 
 
 class FitnessUpdate(BaseModel):
     date: Optional[_date] = None
-    rating: Optional[float] = Field(default=None, ge=1, le=10)
+    rating: Optional[float] = Field(default=None, ge=1, le=15)
     notes: Optional[str] = None
 
 
