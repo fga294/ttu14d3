@@ -28,14 +28,16 @@ export default function PlayerDetail() {
 
   // Fitness score → letter grade mapping.
   // Ordered high-to-low so the first match wins in `fitnessToGrade`.
+  // `color` is used for the plain-text grade in the player header;
+  // `badgeClass` is used for the pill rendering inside the modal.
   const FITNESS_GRADES = [
-    { min: 11,   letter: "A+", badgeClass: "badge-success", label: "Elite academy" },
-    { min: 10,   letter: "A",  badgeClass: "badge-success", label: "Top grassroots" },
-    { min: 9,    letter: "B+", badgeClass: "badge-gold",    label: "Strong grassroots" },
-    { min: 8,    letter: "B",  badgeClass: "badge-gold",    label: "Above average" },
-    { min: 7,    letter: "C",  badgeClass: "badge-warning", label: "Average school boys" },
-    { min: 6,    letter: "D",  badgeClass: "badge-warning", label: "Below average" },
-    { min: -Infinity, letter: "F", badgeClass: "badge-danger", label: "Needs improvement" },
+    { min: 11,   letter: "A+", badgeClass: "badge-success", color: "var(--success)",      label: "Elite academy" },
+    { min: 10,   letter: "A",  badgeClass: "badge-success", color: "var(--success)",      label: "Top grassroots" },
+    { min: 9,    letter: "B+", badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Strong grassroots" },
+    { min: 8,    letter: "B",  badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Above average" },
+    { min: 7,    letter: "C",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Average school boys" },
+    { min: 6,    letter: "D",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Below average" },
+    { min: -Infinity, letter: "F", badgeClass: "badge-danger", color: "var(--danger)",    label: "Needs improvement" },
   ];
 
   const fitnessToGrade = (score) => {
@@ -196,14 +198,6 @@ export default function PlayerDetail() {
                 {player.secondary_position && (
                   <span className="badge badge-blue">{player.secondary_position}</span>
                 )}
-                {latestGrade && (
-                  <span
-                    className={`badge ${latestGrade.badgeClass}`}
-                    title={`Fitness ${latestFitness} → ${latestGrade.letter} (${latestGrade.label})`}
-                  >
-                    {latestGrade.letter}
-                  </span>
-                )}
                 {isCoach && (
                   <button onClick={handleEditPositions} className="text-xs rounded px-2 py-1 ml-1"
                     style={{ background: "var(--surface-600)", color: "var(--text-secondary)" }}>Edit</button>
@@ -218,6 +212,25 @@ export default function PlayerDetail() {
             </>
           )}
         </div>
+        {latestGrade && (
+          <div
+            className="ml-auto text-right"
+            title={`Latest fitness score ${latestFitness} → ${latestGrade.letter} (${latestGrade.label})`}
+          >
+            <p
+              className="text-xs uppercase font-semibold"
+              style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}
+            >
+              Fitness Score
+            </p>
+            <p
+              className="text-2xl font-bold leading-none mt-1"
+              style={{ color: latestGrade.color }}
+            >
+              {latestGrade.letter}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Fitness history */}
