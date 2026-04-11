@@ -217,10 +217,7 @@ export default function PlayerDetail() {
             className="ml-auto text-right"
             title={`Latest fitness score ${latestFitness} → ${latestGrade.letter} (${latestGrade.label})`}
           >
-            <p
-              className="text-xs uppercase font-semibold"
-              style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}
-            >
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
               Fitness Score
             </p>
             <p
