@@ -214,7 +214,7 @@ export default function PlayerDetail() {
         </div>
         {latestGrade && (
           <div
-            className="ml-auto text-right"
+            className="ml-auto text-center"
             title={`Latest fitness score ${latestFitness} → ${latestGrade.letter} (${latestGrade.label})`}
           >
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
