@@ -98,14 +98,19 @@ export default function PlayerDetail() {
 
   const handleAdd = async () => {
     if (!newEntry.date || !newEntry.rating) return;
-    await api.post("/fitness", {
-      player_id: Number(id),
-      date: newEntry.date,
-      rating: Number(newEntry.rating),
-      notes: newEntry.notes || null,
-    });
-    setNewEntry({ date: "", rating: "", notes: "" });
-    refreshFitness();
+    try {
+      await api.post("/fitness", {
+        player_id: Number(id),
+        date: newEntry.date,
+        rating: Number(newEntry.rating),
+        notes: newEntry.notes || null,
+      });
+      setNewEntry({ date: "", rating: "", notes: "" });
+      refreshFitness();
+      showToast("Record added");
+    } catch (e) {
+      showToast(`Failed to add: ${e.message}`);
+    }
   };
 
   const handleEditStart = (f) => {
@@ -114,19 +119,27 @@ export default function PlayerDetail() {
   };
 
   const handleEditSave = async (fid) => {
-    await api.put(`/fitness/${fid}`, {
-      date: editForm.date,
-      rating: Number(editForm.rating),
-      notes: editForm.notes || null,
-    });
-    setEditRow(null);
-    refreshFitness();
-    showToast("Record updated");
+    try {
+      await api.put(`/fitness/${fid}`, {
+        date: editForm.date,
+        rating: Number(editForm.rating),
+        notes: editForm.notes || null,
+      });
+      setEditRow(null);
+      refreshFitness();
+      showToast("Record updated");
+    } catch (e) {
+      showToast(`Failed to update: ${e.message}`);
+    }
   };
 
   const handleDelete = async (fid) => {
-    await api.del(`/fitness/${fid}`);
-    refreshFitness();
+    try {
+      await api.del(`/fitness/${fid}`);
+      refreshFitness();
+    } catch (e) {
+      showToast(`Failed to delete: ${e.message}`);
+    }
   };
 
   useEffect(() => {
