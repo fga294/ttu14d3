@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea,
 } from "recharts";
 
 export default function PlayerDetail() {
@@ -17,7 +17,6 @@ export default function PlayerDetail() {
   const [toast, setToast] = useState(null);
   const [editingPositions, setEditingPositions] = useState(false);
   const [posForm, setPosForm] = useState({ position: "", secondary_position: "" });
-  const [showLevelGuide, setShowLevelGuide] = useState(false);
 
   const POSITIONS = [
     { group: "Goalkeeper", options: ["GK"] },
@@ -25,25 +24,6 @@ export default function PlayerDetail() {
     { group: "Midfielders", options: ["CDM", "CM", "CAM", "LM", "RM"] },
     { group: "Attackers", options: ["LW", "RW", "LF", "RF", "CF", "ST"] },
   ];
-
-  // Fitness score → letter grade mapping.
-  // Ordered high-to-low so the first match wins in `fitnessToGrade`.
-  // `color` is used for the plain-text grade in the player header;
-  // `badgeClass` is used for the pill rendering inside the modal.
-  const FITNESS_GRADES = [
-    { min: 11,   letter: "A+", badgeClass: "badge-success", color: "var(--success)",      label: "Elite academy" },
-    { min: 10,   letter: "A",  badgeClass: "badge-success", color: "var(--success)",      label: "Top grassroots" },
-    { min: 9,    letter: "B+", badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Strong grassroots" },
-    { min: 8,    letter: "B",  badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Above average" },
-    { min: 7,    letter: "C",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Average school boys" },
-    { min: 6,    letter: "D",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Below average" },
-    { min: -Infinity, letter: "F", badgeClass: "badge-danger", color: "var(--danger)",    label: "Needs improvement" },
-  ];
-
-  const fitnessToGrade = (score) => {
-    if (score == null) return null;
-    return FITNESS_GRADES.find((g) => score >= g.min) ?? null;
-  };
 
   const POSITION_NAMES = {
     GK: "Goalkeeper",
@@ -159,7 +139,6 @@ export default function PlayerDetail() {
     : latestFitness < prevFitness ? "down"
     : "same";
   const fitnessPctChange = prevFitness ? (((latestFitness - prevFitness) / prevFitness) * 100) : null;
-  const latestGrade = fitnessToGrade(latestFitness);
 
   return (
     <div>
@@ -225,46 +204,13 @@ export default function PlayerDetail() {
             </>
           )}
         </div>
-        {latestGrade && (
-          <div
-            className="ml-auto text-center"
-            title={`Latest fitness score ${latestFitness} → ${latestGrade.letter} (${latestGrade.label})`}
-          >
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Fitness Score
-            </p>
-            <p
-              className="text-2xl font-bold leading-none mt-1"
-              style={{ color: latestGrade.color }}
-            >
-              {latestGrade.letter}
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Fitness history */}
-      <div className="flex items-baseline justify-between mb-3">
-        <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-          Fitness History
-        </h2>
-        <button
-          type="button"
-          onClick={() => setShowLevelGuide(true)}
-          className="text-xs font-medium underline underline-offset-2"
-          style={{ color: "var(--thunder-gold)", background: "transparent", border: "none", cursor: "pointer" }}
-        >
-          What do these levels mean?
-        </button>
-      </div>
+      <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+        Fitness History
+      </h2>
       <FitnessChart fitness={fitness} />
-
-      {showLevelGuide && (
-        <FitnessLevelGuide
-          grades={FITNESS_GRADES}
-          onClose={() => setShowLevelGuide(false)}
-        />
-      )}
 
       {/* Main stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
@@ -456,6 +402,23 @@ function FitnessChart({ fitness }) {
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} />
           <YAxis domain={[0, 15]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+          <ReferenceArea
+            y1={7}
+            y2={8}
+            ifOverflow="visible"
+            fill="#60A5FA"
+            fillOpacity={0.12}
+            stroke="#60A5FA"
+            strokeOpacity={0.35}
+            strokeDasharray="3 3"
+            label={{
+              value: "Average school boys",
+              position: "insideTopLeft",
+              fill: "#93C5FD",
+              fontSize: 10,
+              fontWeight: 600,
+            }}
+          />
           <Tooltip
             contentStyle={{ background: "var(--surface-800)", border: "none", borderRadius: 8, fontSize: 12 }}
             formatter={(value) => [value, "Rating"]}
@@ -471,137 +434,6 @@ function FitnessChart({ fitness }) {
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
-  );
-}
-
-function FitnessLevelGuide({ grades, onClose }) {
-  const benchmarkRows = [
-    { level: "7 – 9", category: "Average school boys" },
-    { level: "9 – 10.5", category: "Good grassroots players" },
-    { level: "11 – 13+", category: "Elite academy players" },
-  ];
-
-  // Turn the [{min, letter, label, badgeClass}] array (ordered high→low)
-  // into human-readable ranges for the grade table. Each row's upper bound
-  // is the previous row's lower bound; top row is open-ended (≥ min).
-  const gradeRows = grades.map((g, i) => {
-    const prev = grades[i - 1];
-    let range;
-    if (!prev) range = `≥ ${g.min}`;
-    else if (g.min === -Infinity) range = `< ${prev.min}`;
-    else range = `${g.min} – <${prev.min}`;
-    return { range, letter: g.letter, label: g.label, badgeClass: g.badgeClass };
-  });
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.65)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9998,
-        padding: 16,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="card-static"
-        style={{
-          background: "var(--surface-800)",
-          borderRadius: 12,
-          padding: 20,
-          maxWidth: 420,
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
-            Fitness Level Guide
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="text-lg font-bold"
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              lineHeight: 1,
-              padding: "0 4px",
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        <p className="text-xs mb-2 font-semibold uppercase" style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-          Score → Grade
-        </p>
-        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-          Letter grade shown next to a player's positions is derived from their latest fitness score.
-        </p>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 20 }}>
-          <thead>
-            <tr style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Score</th>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Grade</th>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Meaning</th>
-            </tr>
-          </thead>
-          <tbody>
-            {gradeRows.map((r) => (
-              <tr key={r.letter} style={{ borderBottom: "1px solid var(--surface-700)" }}>
-                <td style={{ padding: "8px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                  {r.range}
-                </td>
-                <td style={{ padding: "8px" }}>
-                  <span className={`badge ${r.badgeClass}`}>{r.letter}</span>
-                </td>
-                <td style={{ padding: "8px", color: "var(--text-muted)" }}>
-                  {r.label}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <p className="text-xs mb-2 font-semibold uppercase" style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-          Benchmark reference
-        </p>
-        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-          Approximate test level categories from youth football fitness research.
-        </p>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Level</th>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            {benchmarkRows.map((r) => (
-              <tr key={r.level} style={{ borderBottom: "1px solid var(--surface-700)" }}>
-                <td style={{ padding: "8px", fontWeight: 700, color: "var(--thunder-gold)", whiteSpace: "nowrap" }}>
-                  {r.level}
-                </td>
-                <td style={{ padding: "8px", color: "var(--text-secondary)" }}>
-                  {r.category}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
