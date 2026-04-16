@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { FITNESS_GRADES, fitnessToGrade } from "../utils/fitness";
 
 export default function PlayerDetail() {
   const { id } = useParams();
@@ -25,25 +26,6 @@ export default function PlayerDetail() {
     { group: "Midfielders", options: ["CDM", "CM", "CAM", "LM", "RM"] },
     { group: "Attackers", options: ["LW", "RW", "LF", "RF", "CF", "ST"] },
   ];
-
-  // Fitness score → letter grade mapping.
-  // Ordered high-to-low so the first match wins in `fitnessToGrade`.
-  // `color` is used for the plain-text grade in the player header;
-  // `badgeClass` is used for the pill rendering inside the modal.
-  const FITNESS_GRADES = [
-    { min: 11,   letter: "A+", badgeClass: "badge-success", color: "var(--success)",      label: "Elite academy" },
-    { min: 10,   letter: "A",  badgeClass: "badge-success", color: "var(--success)",      label: "Top grassroots" },
-    { min: 9,    letter: "B+", badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Strong grassroots" },
-    { min: 8,    letter: "B",  badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Above average" },
-    { min: 7,    letter: "C",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Average school boys" },
-    { min: 6,    letter: "D",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Below average" },
-    { min: -Infinity, letter: "F", badgeClass: "badge-danger", color: "var(--danger)",    label: "Needs improvement" },
-  ];
-
-  const fitnessToGrade = (score) => {
-    if (score == null) return null;
-    return FITNESS_GRADES.find((g) => score >= g.min) ?? null;
-  };
 
   const POSITION_NAMES = {
     GK: "Goalkeeper",
@@ -443,6 +425,10 @@ function FitnessChart({ fitness }) {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map((f) => ({ date: f.date, rating: f.rating }));
 
+  const ratings = data.map((d) => d.rating);
+  const yMin = Math.max(0, Math.floor(Math.min(...ratings)) - 2);
+  const yMax = Math.min(15, Math.ceil(Math.max(...ratings)) + 2);
+
   return (
     <div className="card-static p-4 mb-6">
       <ResponsiveContainer width="100%" height={180}>
@@ -455,7 +441,7 @@ function FitnessChart({ fitness }) {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} />
-          <YAxis domain={[0, 15]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+          <YAxis domain={[yMin, yMax]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ background: "var(--surface-800)", border: "none", borderRadius: 8, fontSize: 12 }}
             formatter={(value) => [value, "Rating"]}
@@ -476,12 +462,6 @@ function FitnessChart({ fitness }) {
 }
 
 function FitnessLevelGuide({ grades, onClose }) {
-  const benchmarkRows = [
-    { level: "7 – 9", category: "Average school boys" },
-    { level: "9 – 10.5", category: "Good grassroots players" },
-    { level: "11 – 13+", category: "Elite academy players" },
-  ];
-
   // Turn the [{min, letter, label, badgeClass}] array (ordered high→low)
   // into human-readable ranges for the grade table. Each row's upper bound
   // is the previous row's lower bound; top row is open-ended (≥ min).
@@ -569,33 +549,6 @@ function FitnessLevelGuide({ grades, onClose }) {
                 </td>
                 <td style={{ padding: "8px", color: "var(--text-muted)" }}>
                   {r.label}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <p className="text-xs mb-2 font-semibold uppercase" style={{ color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-          Benchmark reference
-        </p>
-        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-          Approximate test level categories from youth football fitness research.
-        </p>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Level</th>
-              <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid var(--surface-600)" }}>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            {benchmarkRows.map((r) => (
-              <tr key={r.level} style={{ borderBottom: "1px solid var(--surface-700)" }}>
-                <td style={{ padding: "8px", fontWeight: 700, color: "var(--thunder-gold)", whiteSpace: "nowrap" }}>
-                  {r.level}
-                </td>
-                <td style={{ padding: "8px", color: "var(--text-secondary)" }}>
-                  {r.category}
                 </td>
               </tr>
             ))}
