@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { FITNESS_GRADES, fitnessToGrade } from "../utils/fitness";
 
 export default function PlayerDetail() {
   const { id } = useParams();
@@ -25,25 +26,6 @@ export default function PlayerDetail() {
     { group: "Midfielders", options: ["CDM", "CM", "CAM", "LM", "RM"] },
     { group: "Attackers", options: ["LW", "RW", "LF", "RF", "CF", "ST"] },
   ];
-
-  // Fitness score → letter grade mapping.
-  // Ordered high-to-low so the first match wins in `fitnessToGrade`.
-  // `color` is used for the plain-text grade in the player header;
-  // `badgeClass` is used for the pill rendering inside the modal.
-  const FITNESS_GRADES = [
-    { min: 11,   letter: "A+", badgeClass: "badge-success", color: "var(--success)",      label: "Elite academy" },
-    { min: 10,   letter: "A",  badgeClass: "badge-success", color: "var(--success)",      label: "Top grassroots" },
-    { min: 9,    letter: "B+", badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Strong grassroots" },
-    { min: 8,    letter: "B",  badgeClass: "badge-gold",    color: "var(--thunder-gold)", label: "Above average" },
-    { min: 7,    letter: "C",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Average school boys" },
-    { min: 6,    letter: "D",  badgeClass: "badge-warning", color: "var(--warning)",      label: "Below average" },
-    { min: -Infinity, letter: "F", badgeClass: "badge-danger", color: "var(--danger)",    label: "Needs improvement" },
-  ];
-
-  const fitnessToGrade = (score) => {
-    if (score == null) return null;
-    return FITNESS_GRADES.find((g) => score >= g.min) ?? null;
-  };
 
   const POSITION_NAMES = {
     GK: "Goalkeeper",

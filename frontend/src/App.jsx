@@ -9,6 +9,7 @@ import PlayerDetail from "./pages/PlayerDetail";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
 import Formations from "./pages/Formations";
+import Fitness from "./pages/Fitness";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/games" element={<Games />} />
             <Route path="/games/:id" element={<GameDetail />} />
             <Route path="/formations" element={<Formations />} />
+            <Route path="/fitness" element={<Fitness />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -5,7 +5,7 @@ const navItems = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/players", label: "Players", icon: PlayersIcon },
   { to: "/formations", label: "Formations", icon: FormationIcon },
-  { to: "/games", label: "Games", icon: GamesIcon },
+  { to: "/fitness", label: "Fitness", icon: FitnessIcon },
 ];
 
 export default function Layout() {
@@ -203,6 +203,14 @@ function FormationIcon({ size = 24 }) {
       <rect x="2" y="3" width="20" height="18" rx="2" />
       <line x1="2" y1="12" x2="22" y2="12" />
       <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function FitnessIcon({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
   );
 }
