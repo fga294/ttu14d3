@@ -59,16 +59,7 @@ export default function Fitness() {
     .sort(([a], [b]) => new Date(a) - new Date(b))
     .map(([date, ratings]) => {
       const avg = ratings.reduce((s, v) => s + v, 0) / ratings.length;
-      const sorted = [...ratings].sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      const median = sorted.length % 2 === 0
-        ? (sorted[mid - 1] + sorted[mid]) / 2
-        : sorted[mid];
-      return {
-        date,
-        average: +avg.toFixed(1),
-        median: +median.toFixed(1),
-      };
+      return { date, average: +avg.toFixed(1) };
     });
 
   // ── Table data: latest result per player with trend ──
@@ -102,8 +93,16 @@ export default function Fitness() {
       accessorKey: "name",
       header: "Player",
       cell: ({ row }) => (
-        <span className="font-medium" style={{ color: "var(--thunder-blue-light)" }}>
-          #{row.original.number} {row.original.name}
+        <span className="flex items-center gap-2">
+          <span
+            className="inline-flex items-center justify-center text-xs font-bold rounded px-1.5 py-0.5"
+            style={{ background: "var(--thunder-gold)", color: "var(--surface-900)", minWidth: "1.75rem" }}
+          >
+            {row.original.number}
+          </span>
+          <span className="font-medium" style={{ color: "var(--thunder-blue-light)" }}>
+            {row.original.name}
+          </span>
         </span>
       ),
     },
@@ -226,7 +225,7 @@ export default function Fitness() {
         {/* Line chart */}
         <div className="card-static p-4">
           <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
-            Team Trend Over Time
+            Team Fitness Trend Over Time
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={lineData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
@@ -248,21 +247,11 @@ export default function Fitness() {
               <Line
                 type="monotone"
                 dataKey="average"
-                name="Average"
+                name="U14 Div3 Team's average"
                 stroke="#FFD700"
                 strokeWidth={2.5}
                 dot={{ fill: "#FFD700", r: 4 }}
                 activeDot={{ r: 6 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="median"
-                name="Median"
-                stroke="#1a6bdc"
-                strokeWidth={2}
-                strokeDasharray="5 3"
-                dot={{ fill: "#1a6bdc", r: 3 }}
-                activeDot={{ r: 5 }}
               />
               <Legend
                 formatter={(value) => <span style={{ color: "#9ea3b8", fontSize: 12 }}>{value}</span>}
