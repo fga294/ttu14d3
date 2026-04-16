@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { FITNESS_GRADES, fitnessToGrade } from "../utils/fitness";
 import DataTable from "../components/DataTable";
+import FitnessLevelGuide from "../components/FitnessLevelGuide";
 import {
   PieChart, Pie, Cell, Legend, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -12,6 +13,7 @@ import {
 export default function Fitness() {
   const [fitnessRecords, setFitnessRecords] = useState(null);
   const [players, setPlayers] = useState(null);
+  const [showLevelGuide, setShowLevelGuide] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -261,11 +263,25 @@ export default function Fitness() {
         </div>
       </div>
 
+      {showLevelGuide && (
+        <FitnessLevelGuide onClose={() => setShowLevelGuide(false)} />
+      )}
+
       {/* Player results table */}
       <div>
-        <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
-          Player Results
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            Player Results
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowLevelGuide(true)}
+            className="text-xs font-medium"
+            style={{ color: "var(--thunder-blue-light)", background: "none", border: "none", cursor: "pointer" }}
+          >
+            What do these levels mean?
+          </button>
+        </div>
         <DataTable
           data={tableData}
           columns={columns}
