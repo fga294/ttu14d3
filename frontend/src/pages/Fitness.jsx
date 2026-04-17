@@ -63,6 +63,9 @@ export default function Fitness() {
       const avg = ratings.reduce((s, v) => s + v, 0) / ratings.length;
       return { date, average: +avg.toFixed(1) };
     });
+  const lineAvgs = lineData.map((d) => d.average);
+  const lineYMin = Math.max(0, Math.floor(Math.min(...lineAvgs)) - 2);
+  const lineYMax = Math.min(15, Math.ceil(Math.max(...lineAvgs)) + 2);
 
   // ── Table data: latest result per player with trend ──
   const tableData = Object.entries(byPlayer)
@@ -238,7 +241,7 @@ export default function Fitness() {
                 tickLine={false}
               />
               <YAxis
-                domain={[0, 15]}
+                domain={[lineYMin, lineYMax]}
                 tick={{ fontSize: 11, fill: "#9ea3b8" }}
                 tickLine={false}
                 axisLine={false}
