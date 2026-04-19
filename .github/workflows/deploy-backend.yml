@@ -1,0 +1,60 @@
+name: Deploy backend to EC2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+
+    steps:
+      - name: Configure SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H 13.54.166.213 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull, install deps (if changed), restart, smoke-test
+        run: |
+          ssh -i ~/.ssh/ec2_key ec2-user@13.54.166.213 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          cd /home/ec2-user/ttu14d3
+
+          BEFORE_REQ=$(md5sum backend/requirements.txt | awk '{print $1}')
+          git pull --ff-only origin main
+          AFTER_REQ=$(md5sum backend/requirements.txt | awk '{print $1}')
+
+          if [ "$BEFORE_REQ" != "$AFTER_REQ" ]; then
+            echo "requirements.txt changed — installing dependencies"
+            source backend/venv/bin/activate
+            pip install --quiet -r backend/requirements.txt
+            deactivate
+          else
+            echo "requirements.txt unchanged — skipping pip install"
+          fi
+
+          sudo systemctl restart ttu14
+          sleep 2
+          sudo systemctl is-active --quiet ttu14 || {
+            echo "ttu14 service failed to come up — dumping last 40 log lines:"
+            sudo journalctl -u ttu14 -n 40 --no-pager
+            exit 1
+          }
+
+          curl -sf --max-time 5 http://127.0.0.1:3001/api/players > /dev/null
+          echo "Deploy OK. HEAD=$(git rev-parse --short HEAD)"
+          REMOTE
