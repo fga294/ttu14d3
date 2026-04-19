@@ -56,6 +56,11 @@ class PlayerStats(PlayerOut):
     avg_fitness: float | None = None
 
 
+class PlayerGoalsAssists(PlayerOut):
+    goals: int = 0
+    assists: int = 0
+
+
 # --- Game ---
 class GameCreate(BaseModel):
     date: _date
