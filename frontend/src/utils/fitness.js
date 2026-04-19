@@ -10,7 +10,7 @@ export const FITNESS_GRADES = [
   { min: 8,         letter: "B",  badgeClass: "badge-gold",    color: "var(--thunder-gold)", hex: "#e6c200", label: "Above average" },
   { min: 7,         letter: "C",  badgeClass: "badge-warning", color: "var(--warning)",      hex: "#f59e0b", label: "Average school boys" },
   { min: 6,         letter: "D",  badgeClass: "badge-warning", color: "var(--warning)",      hex: "#d97706", label: "Below average" },
-  { min: -Infinity, letter: "F",  badgeClass: "badge-danger",  color: "var(--danger)",       hex: "#ef4444", label: "Needs improvement" },
+  { min: -Infinity, letter: "E",  badgeClass: "badge-danger",  color: "var(--danger)",       hex: "#ef4444", label: "Limited" },
 ];
 
 export function fitnessToGrade(score) {

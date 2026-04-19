@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 from database import get_db
 from models import Player, GameEvent, EventType, Fitness
-from schemas import PlayerCreate, PlayerOut, PlayerStats
+from schemas import PlayerCreate, PlayerGoalsAssists, PlayerOut, PlayerStats
 from deps import get_current_user, require_coach
 
 router = APIRouter(prefix="/api/players", tags=["players"])
@@ -13,6 +13,28 @@ router = APIRouter(prefix="/api/players", tags=["players"])
 @router.get("", response_model=list[PlayerOut])
 def list_players(db: Session = Depends(get_db)):
     return db.query(Player).order_by(Player.number).all()
+
+
+@router.get("/stats", response_model=list[PlayerGoalsAssists])
+def list_player_stats(db: Session = Depends(get_db)):
+    goals_col = func.sum(case((GameEvent.event_type == EventType.goal, 1), else_=0)).label("goals")
+    assists_col = func.sum(case((GameEvent.event_type == EventType.assist, 1), else_=0)).label("assists")
+    rows = (
+        db.query(Player, goals_col, assists_col)
+        .outerjoin(GameEvent, GameEvent.player_id == Player.id)
+        .group_by(Player.id)
+        .order_by(Player.number)
+        .all()
+    )
+    return [
+        PlayerGoalsAssists(
+            id=p.id, name=p.name, number=p.number,
+            position=p.position, secondary_position=p.secondary_position,
+            date_of_birth=p.date_of_birth,
+            goals=int(goals or 0), assists=int(assists or 0),
+        )
+        for p, goals, assists in rows
+    ]
 
 
 @router.get("/{player_id}", response_model=PlayerStats)

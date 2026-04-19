@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import DataTable from "../components/DataTable";
 
 export default function Dashboard() {
   const [players, setPlayers] = useState(null);
   const [games, setGames] = useState(null);
+  const [playerStats, setPlayerStats] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get("/players").then(setPlayers);
     api.get("/games").then(setGames);
+    api.get("/players/stats").then(setPlayerStats);
   }, []);
 
-  const loading = players === null || games === null;
+  const loading = players === null || games === null || playerStats === null;
 
   if (loading) return <DashboardSkeleton />;
 
@@ -67,6 +71,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Goals & Assists */}
+      <GoalsAndAssists players={playerStats} onRowClick={(p) => navigate(`/players/${p.id}`)} />
+
       {/* Recent games */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -90,6 +97,62 @@ export default function Dashboard() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function GoalsAndAssists({ players, onRowClick }) {
+  // Filter to contributors, then pre-sort with the football tie-breaker:
+  // G+A desc → goals desc → name asc. TanStack's stable sort preserves
+  // this ordering when the default G+A sort is applied on render.
+  const rows = players
+    .filter((p) => p.goals + p.assists > 0)
+    .sort((a, b) =>
+      (b.goals + b.assists) - (a.goals + a.assists)
+      || b.goals - a.goals
+      || a.name.localeCompare(b.name)
+    );
+  if (rows.length === 0) return null;
+
+  const columns = [
+    {
+      accessorKey: "name",
+      header: "Player",
+      cell: ({ getValue }) => (
+        <span className="font-medium" style={{ color: "var(--thunder-blue-light)" }}>
+          {getValue()}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "position",
+      header: "Pos",
+      cell: ({ getValue }) => <span className="badge badge-gold">{getValue()}</span>,
+    },
+    {
+      id: "g_plus_a",
+      accessorFn: (row) => row.goals + row.assists,
+      header: "G+A",
+      meta: { highlight: true },
+      cell: ({ getValue }) => (
+        <span className="font-bold" style={{ color: "var(--text-primary)" }}>{getValue()}</span>
+      ),
+    },
+    { accessorKey: "goals", header: "Goals" },
+    { accessorKey: "assists", header: "Assists" },
+  ];
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
+        Goals &amp; Assists
+      </h2>
+      <DataTable
+        data={rows}
+        columns={columns}
+        onRowClick={onRowClick}
+        initialSorting={[{ id: "g_plus_a", desc: true }]}
+      />
     </div>
   );
 }
