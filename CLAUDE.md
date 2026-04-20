@@ -79,7 +79,10 @@ SQLAlchemy `Base.metadata.create_all()` only creates new tables — it never ALT
 - **Frontend**: Vercel Hobby tier, auto-deploys from `main` on push. Project name: `ttu14d3`. Custom domain `ttu14.com` via Cloudflare CNAME (proxied).
 - **Backend + DB**: AWS EC2 (Amazon Linux 2023), Elastic IP `13.54.166.213`, domain `api.ttu14.com` via Cloudflare A record (proxied, Full-strict SSL with Cloudflare Origin Certificate installed on Nginx).
 - **DNS / SSL**: Cloudflare (domain purchased there). Origin cert lives at `/etc/ssl/cloudflare/` on EC2.
-- **SSH**: `ssh -i /Users/fabricio/aws/ttu14-key.pem ec2-user@13.54.166.213` — user is `ec2-user`, not `ubuntu`.
+- **Security Group**: `ttu14-backend-sg` (`sg-057a8668cba411771`) — 80/443 open to the world, **22 open only to home IP `124.168.224.137/32`** as SSH fallback. The old `launch-wizard-1` SG is deleted.
+- **Remote access**: SSM Session Manager is the primary path (works from anywhere, no key, audit-logged). SSH `ssh -i /Users/fabricio/aws/ttu14-key.pem ec2-user@13.54.166.213` is fallback-only and will only connect from the home IP — user is `ec2-user`, not `ubuntu`.
+  - Start an SSM shell: `aws ssm start-session --target i-0d96fb2ccdf8514d6` (lands as root; `sudo -u ec2-user -H bash -l` to get the ec2-user environment).
+- **Instance IAM**: role `ttu14-ec2-role` → instance profile `ttu14-ec2-profile` on `i-0d96fb2ccdf8514d6`, with only `AmazonSSMManagedInstanceCore`. This is what lets the SSM Agent register with Systems Manager.
 - **Backend layout on EC2**: repo cloned at `/home/ec2-user/ttu14d3/`. Python venv at `/home/ec2-user/ttu14d3/backend/venv/`.
 - **Systemd unit**: `ttu14.service` (at `/etc/systemd/system/ttu14.service`) runs Gunicorn + uvicorn workers on `127.0.0.1:3001`. Restart with `sudo systemctl restart ttu14`.
 - **Nginx**: `/etc/nginx/conf.d/ttu14.conf` serves static fallback and reverse-proxies `/api` → `127.0.0.1:3001`.
@@ -89,21 +92,39 @@ SQLAlchemy `Base.metadata.create_all()` only creates new tables — it never ALT
 
 **Frontend** — push to `main`. Vercel auto-builds and promotes.
 
-**Backend** — not automated. After merging to `main`:
+**Backend** — auto-deploys via GitHub Actions (`.github/workflows/deploy-backend.yml`) on any push to `main` that touches `backend/**`. The workflow:
+1. Assumes `ttu14-deploy-role` via GitHub OIDC (no long-lived AWS keys).
+2. Runs `AWS-RunShellScript` via SSM against `i-0d96fb2ccdf8514d6`.
+3. Remote script runs as root but re-drops to `ec2-user` for `git pull` + `pip install` (git refuses to operate on a repo owned by another user — `sudo -u ec2-user -H` avoids monkey-patching root's `safe.directory`).
+4. Restarts `ttu14.service`, waits 2s, asserts `systemctl is-active`, hits `/api/players` as a smoke test.
+
+Manual trigger (e.g. for re-deploys without a code change): `gh workflow run deploy-backend.yml` or the Actions tab in GitHub.
+
+**If the workflow is broken and you need to deploy out-of-band:**
 ```bash
-ssh -i /Users/fabricio/aws/ttu14-key.pem ec2-user@13.54.166.213
-cd /home/ec2-user/ttu14d3 && git pull
-# if requirements changed: source backend/venv/bin/activate && pip install -r backend/requirements.txt
-# if models changed: run the ALTER in `sudo mysql` BEFORE restarting
-sudo systemctl restart ttu14
-sudo systemctl status ttu14 --no-pager    # sanity check
+aws ssm start-session --target i-0d96fb2ccdf8514d6
+# lands as root; drop down for repo operations:
+sudo -u ec2-user -H bash -l
+cd /home/ec2-user/ttu14d3 && git pull --ff-only
+# deps: source backend/venv/bin/activate && pip install -r backend/requirements.txt
+exit  # back to root
+systemctl restart ttu14 && systemctl status ttu14 --no-pager
 ```
+
+**Schema migrations still manual** — run `ALTER TABLE` in `sudo mysql` **before** the code deploy lands, so the first request hitting the new shape doesn't blow up.
 
 ## Database access (local dev)
 
 Do **not** open MariaDB's 3306 port on the EC2 security group. Use an SSH tunnel instead — Beekeeper Studio has one built in:
-- SSH host: `13.54.166.213`, user `ec2-user`, key `/Users/fabricio/aws/ttu14-key.pem`
+- SSH host: `13.54.166.213`, user `ec2-user`, key `/Users/fabricio/aws/ttu14-key.pem` (only works from the home IP since port 22 is locked down)
 - DB host (over tunnel): `127.0.0.1:3306`, user `ttu14`, database `ttu14_db`
+
+If you're off the home network, use SSM port-forwarding instead of SSH tunneling:
+```bash
+aws ssm start-session --target i-0d96fb2ccdf8514d6 \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["3306"],"localPortNumber":["3306"]}'
+```
 
 This avoids having to grant MariaDB `'ttu14'@'%'` or any wildcard host (MariaDB's host-based auth error `Host 'x.x.x.x' is not allowed` is an auth-layer check, not a network one — opening the port won't fix it).
 
